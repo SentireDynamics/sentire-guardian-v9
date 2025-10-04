@@ -1,0 +1,35 @@
+# Sentire Guardian V9 - Python Dependencies
+# Dépendances Python du Vaisseau Guardian V9
+
+# UI - Interface PyQt6
+PyQt6>=6.6.0
+PyQt6-Qt6>=6.6.0
+
+# Data Validation - Schémas Purs (Rituel II)
+pydantic>=2.5.0
+
+# Machine Learning - Intuition
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# Optional: Deep Learning (pour Predator DRL)
+# torch>=2.1.0
+# torchvision>=0.16.0
+
+# HTTP Client - Communication Llama.cpp
+requests>=2.31.0
+
+# FFI - Bridge Python ↔ C
+cffi>=1.16.0
+
+# Logging et Configuration
+python-dotenv>=1.0.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Development Tools (optionnel)
+# black>=23.0.0
+# flake8>=6.0.0
+# mypy>=1.7.0
