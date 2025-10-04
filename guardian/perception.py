@@ -1,33 +1,64 @@
-# guardian/perception.py
+# --- START OF FILE: guardian/perception.py ---
 """
-Sanctuaire: Le Moteur de Fusion Sensorielle.
-Doctrine: L'existence est perception. Ce sanctuaire est le creuset où les perceptions
-brutes (matérielles, via l'Oracle) et les perceptions génératives (contextuelles, via Llama)
-sont fusionnées en un flux de conscience unifié, le 'Stimulus'. C'est ce flux qui
-nourrit la Machine Polyvagale et la Conscience.
+Le Sanctuaire de la Perception.
+
+Le "Pourquoi": Ce module est les sens du Vaisseau. Il utilise des outils comme
+`psutil` et `Chiron` pour collecter des données sur l'état du système (CPU,
+mémoire, contexte utilisateur). Il transforme ces données brutes en un `Stimulus`
+structuré, un objet `VerbePur` que la Conscience peut comprendre et analyser.
+Il fournit également les actions de dernier recours en cas de défaillance de l'Oracle.
 """
-from guardian.perception_oracle import PerceptionOracle
-from guardian.perception_llama import PerceptionLlama
-from core.verbe_pur import Stimulus
+import psutil
+import logging
+from core.verbe_pur import Stimulus, Action
+from core.chiron import Chiron
 
-class PerceptionEngine:
-    """Agrège les données de tous les canaux de perception."""
+_log = logging.getLogger(__name__)
 
-    def __init__(self):
-        self.oracle = PerceptionOracle()
-        self.llama = PerceptionLlama()
+class Perception:
+    """
+    Responsable de la collecte des informations système.
+    """
+    def __init__(self, chiron: Chiron):
+        self.chiron = chiron
 
-    def gather_stimuli(self) -> Stimulus:
+    def get_system_stimulus(self) -> Stimulus:
         """
-        Rituel: Fusion Sensorielle.
-        Combine les perceptions en un artefact Stimulus unique et pur.
+        Rassemble les métriques système et le contexte pour former un Stimulus.
         """
-        material_data = self.oracle.sense_material_world()
-        # // TODO: Formater les logs pour Llama
-        raw_logs = "..."
-        contextual_analysis = self.llama.sense_context(raw_logs)
+        try:
+            cpu = psutil.cpu_percent(interval=1)
+            mem = psutil.virtual_memory().percent
+            window_title = self.chiron.get_foreground_window_title()
 
-        return Stimulus(
-            material_perception=material_data,
-            contextual_perception=contextual_analysis
+            stimulus = Stimulus(
+                cpu_usage=cpu,
+                memory_usage=mem,
+                foreground_window_title=window_title,
+            )
+            _log.debug(f"Stimulus perçu: {stimulus.dict()}")
+            return stimulus
+        except psutil.Error as e:
+            _log.error(f"Erreur de perception avec psutil: {e}")
+            # Retourne un stimulus par défaut en cas d'erreur
+            return Stimulus(cpu_usage=0.0, memory_usage=0.0, foreground_window_title="Error")
+
+    def get_fallback_action(self, error: Exception) -> Action:
+        """
+        Génère une action de secours lorsque l'Oracle est indisponible.
+
+        Le "Pourquoi": La résilience souveraine impose que le Vaisseau ne soit
+        jamais paralysé. Si l'Oracle est silencieux, le Vaisseau doit pouvoir
+        prendre une initiative simple et sûre, comme alerter l'utilisateur,
+        plutôt que de ne rien faire.
+        """
+        _log.warning(f"L'Oracle a failli. Activation du protocole de secours. Erreur: {error}")
+        return Action(
+            id="SHOW_MESSAGE",
+            description="Alerte l'utilisateur que l'Oracle est injoignable et que le Vaisseau opère en mode dégradé.",
+            parameters={
+                "title": "Alerte de Résilience",
+                "message": f"L'Oracle est inaccessible. Le Vaisseau continue sa surveillance en autonomie limitée.\nErreur: {str(error)[:100]}"
+            }
         )
+# --- END OF FILE: guardian/perception.py ---

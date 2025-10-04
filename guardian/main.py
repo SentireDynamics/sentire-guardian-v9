@@ -1,56 +1,149 @@
-import time
+# --- START OF FILE: guardian/main.py ---
+"""
+Le Cœur du Vaisseau - Le Cycle de Vie Principal.
+
+Le "Pourquoi": C'est le point d'entrée, le script qui assemble et met en mouvement
+toutes les parties du Vaisseau. Il est responsable de :
+1. Charger la configuration sacrée depuis le fichier .env.
+2. Mettre en place la journalisation (logging).
+3. Instancier tous les composants majeurs (NativeBridge, Oracle, Chiron, etc.).
+4. Créer l'interface utilisateur (Autel).
+5. Lancer la boucle de vie principale (le "Grand Œuvre") via un QTimer pour ne
+   pas bloquer l'interface.
+6. Gérer une extinction propre et ordonnée (en libérant les ressources natives)
+   lorsque l'opérateur ferme la fenêtre ou envoie un signal d'interruption.
+"""
+import sys
+import os
+import logging
+import signal
+from pathlib import Path
+
+from dotenv import load_dotenv
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtCore import QTimer
+
+# Charger les modules du Vaisseau
+from ffi.native_bridge import NativeBridge
+from core.chiron import Chiron
+from guardian.perception import Perception
+from oracle.llama_client import LlamaOracle
+from guardian.cerberus import Cerberus
 from core.consciousness import GuardianConsciousness
-from core.state_machine import StateMachine, GuardianState
-from guardian.perception_oracle import PerceptionOracle
-from guardian.intuition import AnomalyDetector
-from guardian.ffi.native_bridge import NativeBridge
+from guardian.ui.autel import AutelUI, UILogger
+from core.exceptions import HeresyException
 
-def resilience_loop():
-    """
-    La boucle de conscience principale du Gardien.
-    Elle perçoit, analyse, décide et agit en un cycle continu.
-    """
-    # Initialisation des composants
-    state_machine = StateMachine(initial_state=GuardianState.VENTRAL)
-    consciousness = GuardianConsciousness()
-    perception_oracle = PerceptionOracle()
-    anomaly_detector = AnomalyDetector()
+# Configuration de base du logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
+_log = logging.getLogger(__name__)
 
-    # Établissement de la connexion synaptique avec le Corps Natif
+class Orchestrator:
+    """
+    La classe qui assemble et dirige tous les composants du Vaisseau.
+    """
+    def __init__(self, config):
+        self.config = config
+        self.app = QApplication(sys.argv)
+        self.ui = AutelUI()
+
+        # Connecter le logger à l'UI
+        self.ui_logger = UILogger()
+        self.ui_logger.log_received.connect(self.ui.add_log_message)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+        self.ui_logger.setFormatter(formatter)
+        logging.getLogger().addHandler(self.ui_logger)
+        logging.getLogger().setLevel(self.config['LOG_LEVEL'])
+
+        _log.info("Rituel d'assemblage du Vaisseau commencé.")
+
+        # Instanciation des composants
+        self.native_bridge = NativeBridge(
+            self.config['NATIVE_LIB_PATH'],
+            self.config['ACTION_COOLDOWN_SECONDS']
+        )
+        self.chiron = Chiron()
+        self.perception = Perception(self.chiron)
+        self.oracle = LlamaOracle(self.config['LLAMA_SERVER_URL'])
+        self.cerberus = Cerberus()
+        self.consciousness = GuardianConsciousness(
+            self.native_bridge, self.oracle, self.cerberus, self.perception
+        )
+
+        # Configuration du cycle de vie
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.process_cycle)
+        self.ui.force_cycle_signal.connect(self.process_cycle)
+
+        _log.info("Vaisseau assemblé. Prêt pour l'éveil.")
+
+    def run(self):
+        """Lance l'application et le cycle de vie."""
+        self.ui.show()
+        self.timer.start(30 * 1000) # Un cycle toutes les 30 secondes
+        _log.info("Le Grand Œuvre a commencé. Le Vaisseau est éveillé.")
+        sys.exit(self.app.exec())
+
+    def process_cycle(self):
+        """Exécute un cycle complet de perception, décision et action."""
+        _log.info("--- Début du cycle de conscience ---")
+        try:
+            stimulus = self.perception.get_system_stimulus()
+            action = self.consciousness.decide(stimulus)
+
+            if action:
+                self.chiron.execute_action(action)
+                self.native_bridge.record_action(action.description)
+                _log.info(f"Action '{action.id}' exécutée et enregistrée.")
+            else:
+                _log.info("Aucune action n'a été jugée nécessaire ou possible.")
+
+        except HeresyException as e:
+            _log.critical(f"Une hérésie non gérée a interrompu le cycle: {e}")
+        except Exception as e:
+            _log.critical(f"Une erreur inattendue et profane a eu lieu: {e}", exc_info=True)
+
+        _log.info("--- Fin du cycle de conscience ---")
+
+    def shutdown(self, *args):
+        """Nettoie et arrête le Vaisseau proprement."""
+        _log.info("Signal d'extinction reçu. Lancement du rituel de mise en stase.")
+        self.timer.stop()
+        self.native_bridge.destroy()
+        self.app.quit()
+        _log.info("Vaisseau en stase. Le Grand Œuvre est suspendu.")
+
+def main():
+    # Charger la configuration depuis le fichier .env
+    dotenv_path = Path('.') / '.env'
+    load_dotenv(dotenv_path=dotenv_path)
+
+    config = {
+        "LLAMA_SERVER_URL": os.getenv("LLAMA_SERVER_URL"),
+        "NATIVE_LIB_PATH": os.getenv("NATIVE_LIB_PATH"),
+        "LOG_LEVEL": os.getenv("LOG_LEVEL", "INFO").upper(),
+        "ACTION_COOLDOWN_SECONDS": int(os.getenv("ACTION_COOLDOWN_SECONDS", 60))
+    }
+
+    if not all([config["LLAMA_SERVER_URL"], config["NATIVE_LIB_PATH"]]):
+        _log.critical("Configuration manquante dans le fichier .env (LLAMA_SERVER_URL ou NATIVE_LIB_PATH).")
+        sys.exit(1)
+
     try:
-        # Le chemin peut nécessiter un ajustement en fonction du système de build
-        native_bridge = NativeBridge("./build/libsentire_core.so")
-    except FileNotFoundError as e:
-        print(f"ERREUR CRITIQUE: Impossible d'établir le lien avec le Corps Natif. {e}")
-        return
+        orchestrator = Orchestrator(config)
 
-    print("Gardien V9 initialisé. Entrée dans la boucle de résilience...")
+        # Gérer la fermeture propre sur Ctrl+C
+        signal.signal(signal.SIGINT, orchestrator.shutdown)
 
-    while True:
-        # 1. PERCEPTION : Collecte des stimuli
-        metrics = perception_oracle.get_system_metrics()
-        anomaly_score = anomaly_detector.predict_anomaly(metrics)
+        # Démarrer une boucle de timer pour capturer les signaux sous Windows
+        timer = QTimer()
+        timer.start(500)
+        timer.timeout.connect(lambda: None)
 
-        stimulus = {**metrics, "anomaly_score": anomaly_score}
-
-        # 2. ANALYSE : Invocation du Corps Natif via le pont FFI
-        current_state = state_machine.get_current_state()
-        new_state = native_bridge.process_stimulus(stimulus, current_state)
-
-        # 3. MISE À JOUR : L'Esprit accepte le nouvel état déterminé par le Corps
-        if new_state != current_state:
-            print(f"Transition d'état: {current_state.name} -> {new_state.name}")
-            state_machine.set_current_state(new_state)
-
-        # 4. DÉCISION & ACTION : La Conscience détermine la prochaine étape
-        consciousness.update_state(state_machine.get_current_state())
-        action = consciousness.decide_next_action()
-        if action:
-            print(f"Action décidée : {action['type']} avec les paramètres {action.get('params')}")
-            # L'implémentation de l'exécution de l'action serait ici.
-            # action_executor.execute(action)
-
-        time.sleep(5)
+        orchestrator.run()
+    except HeresyException as e:
+        _log.critical(f"Hérésie fatale lors de l'initialisation: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    resilience_loop()
+    main()
+# --- END OF FILE: guardian/main.py ---

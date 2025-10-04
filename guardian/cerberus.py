@@ -1,49 +1,35 @@
-import hashlib
-import os
+# --- START OF FILE: guardian/cerberus.py ---
+"""
+Le Sanctuaire de Cerberus - Le Gardien des Portes.
 
-def calculate_sha256(filepath: str) -> str:
-    """Calcule le hash SHA-256 d'un fichier."""
-    sha256_hash = hashlib.sha256()
-    try:
-        with open(filepath, "rb") as f:
-            for byte_block in iter(lambda: f.read(4096), b""):
-                sha256_hash.update(byte_block)
-        return sha256_hash.hexdigest()
-    except FileNotFoundError:
-        return "FILE_NOT_FOUND"
+Le "Pourquoi": Ce module agit comme un filtre de sécurité final. Avant qu'une action
+recommandée par l'Oracle ne soit exécutée, Cerberus la valide contre un ensemble de
+règles immuables. Il empêche les actions potentiellement dangereuses ou invalides,
+agissant comme un garde-fou essentiel contre des conseils erronés de l'Oracle.
+C'est la garantie de la non-malfaisance du Vaisseau.
+"""
+import logging
+from core.verbe_pur import Action
+from core.exceptions import InvalidActionError
+
+_log = logging.getLogger(__name__)
 
 class Cerberus:
     """
-    Gardien de l'intégrité des artefacts du code source.
-
-    @doctrine
-    La résilience repose sur une fondation stable. Cerberus garantit cette stabilité
-    en vérifiant l'intégrité des écritures sacrées (le code source) par rapport à un
-    manifeste de hachages connus. Toute déviation est un signe de corruption ou
-    d'intrusion, une menace existentielle pour le Vaisseau.
+    Valide les actions avant leur exécution.
     """
-    def __init__(self, watch_paths: list):
-        self.watch_paths = watch_paths
-        # Le manifeste est maintenant rempli dynamiquement au démarrage
-        self.KNOWN_HASHES = {path: calculate_sha256(path) for path in self.watch_paths}
-        print("Manifeste d'intégrité Cerberus généré.")
+    def __init__(self):
+        # Liste blanche des actions autorisées.
+        self.allowed_actions = {"SHOW_MESSAGE", "LOG_ONLY"}
 
-    def verify_integrity(self) -> bool:
+    def validate_action(self, action: Action) -> bool:
         """
-        Vérifie si les hachages des fichiers surveillés correspondent au manifeste.
+        Valide une action. Lève une exception si l'action est une hérésie.
         """
-        print("Vérification de l'intégrité des artefacts...")
-        for path, known_hash in self.KNOWN_HASHES.items():
-            current_hash = calculate_sha256(path)
-            if current_hash != known_hash:
-                print(f"ALERTE D'INTÉGRITÉ ! L'artefact {path} a été altéré !")
-                print(f"  Attendu : {known_hash}")
-                print(f"  Obtenu  : {current_hash}")
-                return False
-        print("Intégrité des artefacts confirmée.")
+        if action.id not in self.allowed_actions:
+            _log.error(f"Hérésie détectée par Cerberus! Action non autorisée: {action.id}")
+            raise InvalidActionError(f"Action '{action.id}' is not in the list of allowed actions.")
+
+        _log.debug(f"Action '{action.id}' validée par Cerberus.")
         return True
-
-# Exemple d'usage :
-# files_to_watch = ["guardian/main.py", "core/state_machine.py"]
-# cerberus_instance = Cerberus(files_to_watch)
-# cerberus_instance.verify_integrity()
+# --- END OF FILE: guardian/cerberus.py ---

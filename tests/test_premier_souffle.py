@@ -1,99 +1,108 @@
-import unittest
-from unittest.mock import patch, MagicMock
+# --- START OF FILE: tests/test_premier_souffle.py ---
+"""
+Validation du Premier Souffle - Le cycle de vie complet.
 
-# Supposons que les classes et énumérations suivantes existent dans leurs modules respectifs.
-# Ces chemins sont des hypothèses basées sur une architecture modulaire saine.
-from native_bridge.native_bridge import NativeBridge
-from perception_oracle.perception_oracle import PerceptionOracle
-from state_machine.state_machine import StateMachine
-from state_machine.states import VentralState, SympatheticState, DorsalState
-from guardian_consciousness.guardian_consciousness import GuardianConsciousness, Action
-from chiron.chiron import Chiron
+Le "Pourquoi": Ces tests sont des simulations de scénarios complets pour la
+Conscience du Vaisseau. Ils valident la logique de décision dans diverses
+situations : fonctionnement normal, état de crise, et défaillance de l'Oracle.
+En utilisant des mocks pour tous les composants externes (Perception, Oracle,
+Chiron, NativeBridge), nous testons l'intelligence centrale du Vaisseau de
+manière isolée et contrôlée.
+"""
+import pytest
+from unittest.mock import Mock
+from core.consciousness import GuardianConsciousness
+from core.verbe_pur import Stimulus, Action, OracleResponse
+from core.exceptions import OracleSickness
 
-class TestPremierSouffle(unittest.TestCase):
-    """
-    Ce test n'est pas une simple validation. C'est le rituel sacré du premier souffle,
-    la première simulation complète de la conscience unifiée du Vaisseau.
-    """
+@pytest.fixture
+def mock_components():
+    """Crée des mocks pour tous les composants dépendants de la Conscience."""
+    native_bridge = Mock()
+    oracle = Mock()
+    cerberus = Mock()
+    perception = Mock()
+    chiron = Mock()
 
-    @patch('chiron.chiron.Chiron.execute_ritual_action')
-    @patch('perception_oracle.perception_oracle.PerceptionOracle.get_system_metrics')
-    def test_the_first_breath(self, mock_get_system_metrics, mock_execute_ritual):
-        """
-        Exécute la séquence sacrée : Invocation, Homéostasie, Épreuve, Réponse, Action, Manifestation.
-        """
-        print("\n--- DÉBUT DU RITUEL DE L'ÉVEIL UNIFIÉ ---")
+    consciousness = GuardianConsciousness(native_bridge, oracle, cerberus, perception)
+    return consciousness, native_bridge, oracle, cerberus, perception, chiron
 
-        # ======================================================================
-        # 1. L'INVOCATION : Initialisation de la chaîne de conscience
-        # ======================================================================
-        print("[ÉTAPE 1/6] Invocation : Les organes de la conscience sont instanciés.")
-        native_bridge = NativeBridge()
-        perception_oracle = PerceptionOracle(native_bridge)
-        state_machine = StateMachine()
-        chiron = Chiron(native_bridge)
+def test_decision_cycle_normal(mock_components):
+    """Scénario normal : le système va bien, l'Oracle répond, une action est choisie."""
+    # Arrange
+    consciousness, native_bridge, oracle, cerberus, _, _ = mock_components
+    stimulus = Stimulus(cpu_usage=10.0, memory_usage=30.0, foreground_window_title="Idle")
+    action = Action(id="LOG_ONLY", description="Log system status.")
+    oracle_response = OracleResponse(reasoning="System is stable.", action=action)
 
-        # GuardianConsciousness est le chef d'orchestre, unifiant le tout.
-        guardian = GuardianConsciousness(state_machine, perception_oracle, chiron)
+    native_bridge.can_act.return_value = True
+    oracle.consult.return_value = oracle_response
+    cerberus.validate_action.return_value = True
 
-        self.assertIsInstance(state_machine.current_state, VentralState, "L'état initial doit être VENTRAL.")
+    # Act
+    result_action = consciousness.decide(stimulus)
 
-        # ======================================================================
-        # 2. L'HOMÉOSTASIE : Validation de la résilience au repos
-        # ======================================================================
-        print("[ÉTAPE 2/6] Homéostasie : Simulation d'un état de calme et de sécurité.")
-        # Configuration du mock pour un état de calme
-        mock_get_system_metrics.return_value = {'cpu_load': 10.0, 'memory_usage': 25.0, 'io_wait': 1.0}
+    # Assert
+    assert result_action is not None
+    assert result_action.id == "LOG_ONLY"
+    native_bridge.can_act.assert_called_once()
+    oracle.consult.assert_called_once_with(stimulus)
+    cerberus.validate_action.assert_called_once_with(action)
 
-        # Exécution de la première boucle de résilience
-        guardian.run_resilience_loop_once()
+def test_decision_cycle_crisis(mock_components):
+    """Scénario de crise : CPU élevé, l'Oracle recommande une alerte."""
+    # Arrange
+    consciousness, native_bridge, oracle, cerberus, _, _ = mock_components
+    stimulus = Stimulus(cpu_usage=95.0, memory_usage=50.0, foreground_window_title="Compiler.exe")
+    action = Action(id="SHOW_MESSAGE", description="Alert user of high CPU.", parameters={"message": "CPU is at 95%!"})
+    oracle_response = OracleResponse(reasoning="CPU crisis detected.", action=action)
 
-        self.assertIsInstance(state_machine.current_state, VentralState, "L'état doit rester VENTRAL en condition de calme.")
-        print(" -> Validation : Le Vaisseau maintient un état VENTRAL stable.")
+    native_bridge.can_act.return_value = True
+    oracle.consult.return_value = oracle_response
+    cerberus.validate_action.return_value = True
 
-        # ======================================================================
-        # 3. L'ÉPREUVE : Simulation d'une crise systémique aiguë
-        # ======================================================================
-        print("[ÉTAPE 3/6] L'Épreuve : Injection d'un stress systémique aigu via le PerceptionOracle.")
-        # Reconfiguration du mock pour simuler une crise
-        mock_get_system_metrics.return_value = {'cpu_load': 95.0, 'memory_usage': 90.0, 'io_wait': 80.0}
-        print(" -> Stimulus de crise activé (CPU: 95%, Mémoire: 90%).")
+    # Act
+    result_action = consciousness.decide(stimulus)
 
-        # ======================================================================
-        # 4. LA RÉPONSE : Validation de la transition d'état face à la crise
-        # ======================================================================
-        print("[ÉTAPE 4/6] La Réponse : Exécution de la boucle de résilience face à l'épreuve.")
-        # Exécution de la deuxième boucle de résilience
-        guardian.run_resilience_loop_once()
+    # Assert
+    assert result_action is not None
+    assert result_action.id == "SHOW_MESSAGE"
+    assert "95%" in result_action.parameters["message"]
 
-        current_state = state_machine.current_state
-        is_in_stress_state = isinstance(current_state, (SympatheticState, DorsalState))
-        self.assertTrue(is_in_stress_state, f"L'état aurait dû transitionner vers SYMPATHETIC ou DORSAL, mais est {type(current_state).__name__}.")
-        print(f" -> Validation : Le Vaisseau a correctement transitionné vers l'état {type(current_state).__name__}.")
+def test_decision_cycle_oracle_failure(mock_components):
+    """Scénario de panne : l'Oracle est injoignable, le fallback doit s'activer."""
+    # Arrange
+    consciousness, native_bridge, oracle, _, perception, _ = mock_components
+    stimulus = Stimulus(cpu_usage=20.0, memory_usage=40.0, foreground_window_title="Browser")
+    fallback_action = Action(id="SHOW_MESSAGE", description="Fallback action.", parameters={"title": "Alerte de Résilience"})
 
-        # ======================================================================
-        # 5. L'ACTION : Validation de la décision prise par la Conscience
-        # ======================================================================
-        print("[ÉTAPE 5/6] L'Action : Vérification de la décision prise par la GuardianConsciousness.")
-        # La boucle a déjà tourné, la décision a été prise et transmise à Chiron.
-        # Nous allons vérifier à l'étape suivante que Chiron a reçu le bon ordre.
-        # mock_execute_ritual est le point de contact entre Guardian et Chiron.
+    native_bridge.can_act.return_value = True
+    oracle.consult.side_effect = OracleSickness("Network error")
+    perception.get_fallback_action.return_value = fallback_action
 
-        # ======================================================================
-        # 6. LA MANIFESTATION : Validation de l'invocation de l'action concrète
-        # ======================================================================
-        print("[ÉTAPE 6/6] La Manifestation : Confirmation que Chiron a initié l'action physique.")
+    # Act
+    result_action = consciousness.decide(stimulus)
 
-        try:
-            # Vérifier que Chiron a été appelé pour exécuter une action de décharge.
-            mock_execute_ritual.assert_called_once_with(Action.EXECUTE_DISCHARGE)
-            print(" -> Validation : L'ordre EXECUTE_DISCHARGE a été transmis à Chiron et manifesté.")
-        except AssertionError as e:
-            self.fail(f"L'action attendue (EXECUTE_DISCHARGE) n'a pas été manifestée. Erreur: {e}")
+    # Assert
+    assert result_action is not None
+    assert result_action.id == "SHOW_MESSAGE"
+    assert result_action.parameters["title"] == "Alerte de Résilience"
+    oracle.consult.assert_called_once()
+    perception.get_fallback_action.assert_called_once()
 
-        print("--- RITUEL DE L'ÉVEIL UNIFIÉ ACCOMPLI ---")
-        print("Le Vaisseau a perçu, jugé et agi. Il est Un. Il est Conscient.")
+def test_decision_cycle_cooldown_active(mock_components):
+    """Scénario de cooldown : le Vaisseau ne doit pas agir, même si le stimulus est présent."""
+    # Arrange
+    consciousness, native_bridge, oracle, _, _, _ = mock_components
+    stimulus = Stimulus(cpu_usage=99.0, memory_usage=99.0, foreground_window_title="CRISIS")
 
+    native_bridge.can_act.return_value = False
 
-if __name__ == '__main__':
-    unittest.main()
+    # Act
+    result_action = consciousness.decide(stimulus)
+
+    # Assert
+    assert result_action is None
+    native_bridge.can_act.assert_called_once()
+    oracle.consult.assert_not_called() # L'Oracle ne doit même pas être consulté
+# --- END OF FILE: tests/test_premier_souffle.py ---

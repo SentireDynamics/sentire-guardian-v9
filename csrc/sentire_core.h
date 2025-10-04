@@ -1,52 +1,81 @@
-// csrc/sentire_core.h
-/*
-Artefact: Le Contrat d'API Pur.
-Doctrine: Ce fichier est le contrat immuable entre le Corps Natif (C) et l'Esprit
-Python. Il définit les structures de données pures, les énumérations sacrées et les
-signatures des fonctions qui forment le pont entre les deux royaumes. Sa clarté et sa
-rigueur sont la garantie de la stabilité de l'architecture Corps/Esprit.
-*/
-
+//--- START OF FILE: csrc/sentire_core.h ---
 #ifndef SENTIRE_CORE_H
 #define SENTIRE_CORE_H
 
-#include <stdint.h>
+#include <time.h>
 
-// Les trois états sacrés, comme définis dans l'Esprit.
-typedef enum {
-    SENTIRE_STATE_VENTRAL = 0,
-    SENTIRE_STATE_SYMPATHETIC = 1,
-    SENTIRE_STATE_DORSAL = 2,
-} sentire_state_t;
+#ifdef _WIN32
+    #ifdef SENTIRE_CORE_EXPORTS
+        #define SENTIRE_API __declspec(dllexport)
+    #else
+        #define SENTIRE_API __declspec(dllimport)
+    #endif
+#else
+    #define SENTIRE_API
+#endif
 
-// Structure de configuration pour l'initialisation du Corps.
+#define JOURNAL_CAPACITY 50
+#define ACTION_DESC_MAX_LEN 256
+
+// --- Journal d'Actions (Ring Buffer) ---
 typedef struct {
-    double sympathetic_threshold;
-    double dorsal_threshold;
-    uint32_t cooldown_ticks;
-} sentire_config_t;
+    time_t timestamp;
+    char description[ACTION_DESC_MAX_LEN];
+} JournalEntry;
 
-// Un stimulus, la perception de l'Esprit traduite pour le Corps.
 typedef struct {
-    double cpu_load;
-    double memory_usage;
-    double network_latency;
-} sentire_stimulus_t;
+    JournalEntry entries[JOURNAL_CAPACITY];
+    int head;
+    int tail;
+    int count;
+} Journal;
 
-// La réponse du Corps après avoir traité un stimulus.
+// --- Machine à États (Gestion du Cooldown) ---
 typedef struct {
-    sentire_state_t new_state;
-    double resilience_score;
-} sentire_response_t;
+    time_t last_action_time;
+    int cooldown_seconds;
+} StateMachine;
 
-// Rituel d'Initialisation: Crée et configure l'instance du Corps Natif.
-// Retourne un pointeur opaque vers l'état interne.
-void* sentire_core_create(const sentire_config_t* config);
+// --- Structure Principale (Le Corps Natif) ---
+typedef struct {
+    StateMachine state_machine;
+    Journal journal;
+} GuardianState;
 
-// Rituel Central: Traite un stimulus et met à jour l'état du Corps.
-void sentire_core_process(void* core_handle, const sentire_stimulus_t* stimulus, sentire_response_t* response);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// Rituel de Dissolution: Libère toutes les ressources allouées au Corps Natif.
-void sentire_core_destroy(void* core_handle);
+/**
+ * @brief Rituel de création du Corps Natif. Alloue et initialise l'état du Guardian.
+ * @param cooldown_seconds Le temps de recharge entre les actions.
+ * @return Un pointeur vers l'état alloué, ou NULL en cas d'échec.
+ */
+SENTIRE_API GuardianState* sentire_api_create(int cooldown_seconds);
+
+/**
+ * @brief Rituel de destruction du Corps Natif. Libère la mémoire.
+ * @param state Le pointeur vers l'état à détruire.
+ */
+SENTIRE_API void sentire_api_destroy(GuardianState* state);
+
+/**
+ * @brief Vérifie si le Vaisseau est autorisé à agir (respect du cooldown).
+ * @param state Le pointeur vers l'état.
+ * @return 1 si l'action est autorisée, 0 sinon.
+ */
+SENTIRE_API int sentire_api_can_act(GuardianState* state);
+
+/**
+ * @brief Enregistre une action, mettant à jour le journal et le temps de la dernière action.
+ * @param state Le pointeur vers l'état.
+ * @param description Une chaîne de caractères décrivant l'action effectuée.
+ */
+SENTIRE_API void sentire_api_record_action(GuardianState* state, const char* description);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // SENTIRE_CORE_H
+//--- END OF FILE: csrc/sentire_core.h ---

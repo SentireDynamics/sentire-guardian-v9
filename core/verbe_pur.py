@@ -1,30 +1,38 @@
-# core/verbe_pur.py
+# --- START OF FILE: core/verbe_pur.py ---
 """
-Sanctuaire: Les Schémas de Messages Purs.
-Doctrine: La communication interne de l'Esprit doit être immuable et sans effet
-de bord. Ce sanctuaire utilise des dataclasses pour définir des 'Verbes Purs',
-des structures de données pures qui transportent l'information entre les
-sanctuaires sans risque de corruption. Ils sont les mots du langage interne du Vaisseau.
+Le Sanctuaire du Verbe Pur.
+
+Le "Pourquoi": Ce module définit les structures de données fondamentales du Vaisseau
+en utilisant Pydantic. Il agit comme un contrat, garantissant que les données qui
+circulent entre les différents composants (Perception, Conscience, Oracle) sont
+toujours valides, structurées et explicites. C'est le langage commun du Grand Œuvre.
 """
-from dataclasses import dataclass, field
-from typing import Any, Dict
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
-@dataclass(frozen=True)
-class Stimulus:
+class Stimulus(BaseModel):
     """
-    Un artefact représentant un 'moment' de perception,
-    la somme de toutes les sensations du Vaisseau à un instant t.
+    Représente les informations brutes perçues par le Vaisseau sur son environnement.
+    C'est l'étincelle qui initie le cycle de réflexion.
     """
-    material_perception: Dict[str, Any] = field(default_factory=dict)
-    contextual_perception: str = ""
+    cpu_usage: float = Field(..., description="Utilisation actuelle du CPU en pourcentage.")
+    memory_usage: float = Field(..., description="Utilisation actuelle de la mémoire en pourcentage.")
+    foreground_window_title: str = Field(..., description="Titre de la fenêtre actuellement au premier plan.")
 
-@dataclass(frozen=True)
-class StateTransition:
+class Action(BaseModel):
     """
-    Un artefact qui encapsule le passage d'un état polyvagal à un autre,
-    la cause de cette transition et le score de résilience associé.
+    Représente une action unique et atomique que le Vaisseau peut entreprendre.
+    C'est la matérialisation de la volonté.
     """
-    from_state: Any # PolyvagalState
-    to_state: Any   # PolyvagalState
-    resilience_score: float
-    triggering_stimulus: Stimulus
+    id: str = Field(..., description="Un identifiant unique pour l'action, ex: 'LOG_WARNING', 'SHOW_MESSAGE'.")
+    description: str = Field(..., description="Description en langage naturel de ce que fait l'action.")
+    parameters: Optional[dict] = Field(default_factory=dict, description="Paramètres nécessaires à l'exécution de l'action.")
+
+class OracleResponse(BaseModel):
+    """
+    Représente la réponse structurée de l'Oracle à une sollicitation.
+    C'est le conseil divin, la stratégie à adopter.
+    """
+    reasoning: str = Field(..., description="Explication de l'Oracle sur le choix de l'action.")
+    action: Action = Field(..., description="L'action recommandée à entreprendre.")
+# --- END OF FILE: core/verbe_pur.py ---

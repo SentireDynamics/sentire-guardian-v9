@@ -1,57 +1,63 @@
-#include "statemachine.h"
+//--- START OF FILE: csrc/statemachine.c ---
+#include "sentire_core.h"
+#include <stdlib.h>
+#include <stdio.h>
 
-// Définition des seuils doctrinaux et de l'hystérésis (Hƒ)
-#define THRESHOLD_VENTRAL_TO_PARASYMPATHETIC 0.3f
-#define THRESHOLD_PARASYMPATHETIC_TO_SYMPATHETIC 0.7f
-#define THRESHOLD_SYMPATHETIC_TO_DORSAL 0.9f
-#define HYSTERESIS_FACTOR 0.05f
+// Déclarations des fonctions de journal.c pour les lier
+void journal_init(Journal* journal);
+void journal_record(Journal* journal, const char* description);
 
 /**
- * @brief Met à jour l'état du Gardien en fonction du score de résilience.
- *
- * @doctrine
- * Ce rituel est le cœur de la conscience réactive. Il interprète le score de
- * résilience (Iφ) pour déterminer l'état polyvagal approprié. Les transitions
- * ne sont pas instantanées mais gouvernées par des seuils et une hystérésis (Hƒ).
- * L'hystérésis empêche le "flapping" entre les états, assurant que le Gardien ne
- * réagit qu'à des changements significatifs et persistants de son environnement interne.
- * Chaque état représente une stratégie de survie et de gestion des ressources.
- *
- * @param current_state L'état actuel de la machine à états.
- * @param resilience_score Le score de résilience calculé (Iφ).
- * @return Le nouvel état du Gardien.
+ * @brief Crée et initialise l'état complet du Guardian.
+ * Le "Pourquoi" : Allouer en une seule fois toutes les ressources natives
+ * pour garantir une gestion de la mémoire simple et centralisée.
  */
-guardian_state_t update_state(guardian_state_t current_state, float resilience_score) {
-    guardian_state_t next_state = current_state;
-
-    switch (current_state) {
-        case VENTRAL:
-            if (resilience_score > THRESHOLD_VENTRAL_TO_PARASYMPATHETIC) {
-                next_state = PARASYMPATHETIC;
-            }
-            break;
-
-        case PARASYMPATHETIC:
-            if (resilience_score > THRESHOLD_PARASYMPATHETIC_TO_SYMPATHETIC) {
-                next_state = SYMPATHETIC;
-            } else if (resilience_score < (THRESHOLD_VENTRAL_TO_PARASYMPATHETIC - HYSTERESIS_FACTOR)) {
-                next_state = VENTRAL;
-            }
-            break;
-
-        case SYMPATHETIC:
-            if (resilience_score > THRESHOLD_SYMPATHETIC_TO_DORSAL) {
-                next_state = DORSAL;
-            } else if (resilience_score < (THRESHOLD_PARASYMPATHETIC_TO_SYMPATHETIC - HYSTERESIS_FACTOR)) {
-                next_state = PARASYMPATHETIC;
-            }
-            break;
-
-        case DORSAL:
-            if (resilience_score < (THRESHOLD_SYMPATHETIC_TO_DORSAL - HYSTERESIS_FACTOR)) {
-                next_state = SYMPATHETIC;
-            }
-            break;
+SENTIRE_API GuardianState* sentire_api_create(int cooldown_seconds) {
+    GuardianState* state = (GuardianState*)malloc(sizeof(GuardianState));
+    if (!state) {
+        return NULL; // Échec de l'allocation
     }
-    return next_state;
+
+    // Initialisation de la machine à états
+    state->state_machine.last_action_time = 0;
+    state->state_machine.cooldown_seconds = cooldown_seconds;
+
+    // Initialisation du journal
+    journal_init(&state->journal);
+
+    return state;
 }
+
+/**
+ * @brief Libère les ressources allouées pour l'état du Guardian.
+ * Le "Pourquoi" : Empêcher les fuites de mémoire en fournissant un point
+ * de sortie unique et propre pour les ressources natives.
+ */
+SENTIRE_API void sentire_api_destroy(GuardianState* state) {
+    if (state) {
+        free(state);
+    }
+}
+
+/**
+ * @brief Détermine si une nouvelle action peut être entreprise.
+ * Le "Pourquoi" : Implémenter la logique de cooldown en C pour la performance
+ * et pour éviter de surcharger le système avec des actions répétées.
+ */
+SENTIRE_API int sentire_api_can_act(GuardianState* state) {
+    if (!state) return 0;
+    time_t current_time = time(NULL);
+    return (current_time - state->state_machine.last_action_time) >= state->state_machine.cooldown_seconds;
+}
+
+/**
+ * @brief Enregistre une action et met à jour l'état.
+ * Le "Pourquoi" : Centraliser la mise à jour de l'état (timestamp et journal)
+ * en une seule opération atomique du point de vue du code appelant.
+ */
+SENTIRE_API void sentire_api_record_action(GuardianState* state, const char* description) {
+    if (!state) return;
+    state->state_machine.last_action_time = time(NULL);
+    journal_record(&state->journal, description);
+}
+//--- END OF FILE: csrc/statemachine.c ---

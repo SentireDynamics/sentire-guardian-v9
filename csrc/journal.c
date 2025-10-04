@@ -1,19 +1,40 @@
-// csrc/journal.c
-/*
-Artefact: Le Journal Persistant.
-Doctrine: La mémoire du Corps doit être rapide, fiable et d'une taille finie pour
-éviter toute fuite de ressources. Ce journal est implémenté comme un ring buffer,
-une structure de données cyclique parfaite pour enregistrer les événements les plus
-récents sans jamais déborder. C'est la mémoire à court terme, gravée en C.
-*/
+//--- START OF FILE: csrc/journal.c ---
+#include "sentire_core.h"
+#include <stdlib.h>
+#include <string.h>
 
-// // TODO: Compléter l'implémentation de ce placeholder.
-#include <stdio.h>
-
-void journal_record() {
-    // Placeholder pour un ring buffer en mémoire.
+/**
+ * @brief Initialise le journal (ring buffer).
+ * @param journal Pointeur vers le journal à initialiser.
+ */
+void journal_init(Journal* journal) {
+    if (!journal) return;
+    journal->head = 0;
+    journal->tail = 0;
+    journal->count = 0;
+    memset(journal->entries, 0, sizeof(journal->entries));
 }
 
-void journal_get_last() {
-    // Placeholder.
+/**
+ * @brief Enregistre une nouvelle entrée dans le journal.
+ * @param journal Pointeur vers le journal.
+ * @param description Description de l'action à enregistrer.
+ */
+void journal_record(Journal* journal, const char* description) {
+    if (!journal) return;
+
+    JournalEntry* entry = &journal->entries[journal->head];
+    entry->timestamp = time(NULL);
+    strncpy(entry->description, description, ACTION_DESC_MAX_LEN - 1);
+    entry->description[ACTION_DESC_MAX_LEN - 1] = '\0'; // Assurer la terminaison null
+
+    journal->head = (journal->head + 1) % JOURNAL_CAPACITY;
+
+    if (journal->count < JOURNAL_CAPACITY) {
+        journal->count++;
+    } else {
+        // Le buffer est plein, la queue avance avec la tête
+        journal->tail = (journal->tail + 1) % JOURNAL_CAPACITY;
+    }
 }
+//--- END OF FILE: csrc/journal.c ---

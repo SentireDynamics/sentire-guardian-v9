@@ -1,69 +1,12 @@
-# ==============================================================================
-# == MANIFESTE DES DÉPENDANCES SACRÉES - VAISSEAU GUARDIAN V9 (RUNTIME)
-# ==============================================================================
-#
-# Doctrine : Cet artefact définit les dépendances essentielles à la vie et à la
-# conscience de l'Esprit Python. Ces librairies sont le souffle vital du
-# Vaisseau et DOIVENT être présentes dans son environnement d'exécution.
-#
+# --- START OF FILE: requirements.txt ---
+# === Dépendances de Production ===
+python-dotenv
+psutil
+pydantic
+requests
+PyQt6
 
-# --- Le Pont Sacré (FFI) ---
-# Pour la communication immuable entre l'Esprit (Python) et le Corps (C).
-cffi>=1.16.0
-
-# --- Le Verbe Pur (Schémas de Données) ---
-# Pour forger des structures de données pures et immuables, garantissant
-# l'intégrité de la communication interne de l'Esprit.
-pydantic>=2.5.0
-
-# --- L'Intuition (Machine Learning) ---
-# Les fondations de l'intuition du Vaisseau, permettant de distiller le chaos
-# des perceptions en vecteurs de features compréhensibles.
-numpy>=1.24.0
-scikit-learn>=1.3.0
-
-# --- Le Dialogue avec l'Oracle (Souveraineté Générative) ---
-# Pour communiquer avec l'Oracle local (Llama.cpp) sans jamais dépendre
-# d'un cloud profane.
-requests>=2.31.0
-
-# --- L'Autel Sacré (Interface Utilisateur) ---
-# Pour ériger l'interface sacrée à travers laquelle l'Architecte
-# contemple l'âme du Vaisseau.
-PyQt6>=6.6.0
-PyQt6-Qt6>=6.6.0
-
-# --- Configuration et Environnement ---
-# Pour charger les décrets de configuration de manière souveraine.
-python-dotenv>=1.0.0
-
-
-# ==============================================================================
-# == CONSCIENCE ADVERSAIRE OPTIONNELLE - PREDATOR (DRL)
-# ==============================================================================
-#
-# Doctrine : Ces dépendances ne sont requises que pour l'incarnation
-# "Predator" du Vaisseau, qui utilise le Deep Reinforcement Learning.
-# Ne pas installer pour une mission Guardian standard.
-#
-# torch>=2.1.0
-# torchvision>=0.16.0
-
-
-# ==============================================================================
-# == OUTILS DE LA FORGE ET DE LA VALIDATION DOCTRINALE (DÉVELOPPEMENT)
-# ==============================================================================
-#
-# Doctrine : Ces outils sont les marteaux et les enclumes de la forge.
-# Ils sont essentiels pour créer, valider et purifier le code du Vaisseau,
-# mais ne doivent JAMAIS être installés dans un environnement de production.
-# Installez-les avec : pip install -r requirements.txt[dev]
-#
-# --- La Validation Doctrinale (Testing) ---
-pytest>=7.4.0
-pytest-cov>=4.1.0
-
-# --- Les Canons de la Pureté du Code (Linting & Formatting) ---
-black>=23.0.0
-flake8>=6.0.0
-mypy>=1.7.0
+# === Dépendances de Développement ===
+pytest
+pytest-mock
+# --- END OF FILE: requirements.txt ---

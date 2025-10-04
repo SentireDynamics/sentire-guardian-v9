@@ -1,78 +1,80 @@
-import os
-import subprocess
-import sys
-import psutil
+# --- START OF FILE: core/chiron.py ---
+"""
+Le Sanctuaire de Chiron - Le Centaure Exécuteur.
+
+Le "Pourquoi": Ce module est le bras armé du Vaisseau. Il encapsule toutes les
+interactions directes avec le système d'exploitation Windows via l'API Win32,
+en utilisant `ctypes`. En centralisant ces appels de bas niveau, on isole le reste
+de l'application des complexités de la plateforme, et on crée un point de contrôle
+unique pour l'exécution des actions souveraines.
+"""
+import ctypes
+import logging
+from ctypes import wintypes
+
+_log = logging.getLogger(__name__)
+
+# Définition des prototypes de fonctions de l'API Windows
+user32 = ctypes.windll.user32
+MessageBoxW = user32.MessageBoxW
+MessageBoxW.argtypes = (wintypes.HWND, wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.UINT)
+MessageBoxW.restype = ctypes.c_int
+
+GetForegroundWindow = user32.GetForegroundWindow
+GetForegroundWindow.restype = wintypes.HWND
+
+GetWindowTextW = user32.GetWindowTextW
+GetWindowTextW.argtypes = (wintypes.HWND, wintypes.LPWSTR, ctypes.c_int)
+GetWindowTextW.restype = ctypes.c_int
 
 class Chiron:
     """
-    Le bras armé du Gardien, responsable de l'exécution des actions sur le système.
-
-    @doctrine
-    Chiron est la matérialisation de la volonté du Gardien. Chaque méthode est un rituel
-    d'action, une intervention directe sur le système d'exploitation. L'implémentation
-    doit être puissante mais prudente, capable d'affecter le changement nécessaire
-    tout en préservant l'intégrité du Vaisseau. L'utilisation de `subprocess` et `psutil`
-    permet des interactions réelles et contrôlées avec l'environnement.
+    La classe Chiron fournit des méthodes pour interagir avec l'OS Windows.
     """
-    def flush_memory_cache(self):
+    def get_foreground_window_title(self) -> str:
         """
-        Rituel pour forcer le noyau à vider les caches de page, dentries et inodes.
-        Action puissante réservée aux situations de stress mémoire intense.
-        NOTE : Nécessite des privilèges élevés (root).
-        """
-        if sys.platform != "linux":
-            print("AVERTISSEMENT : Le rituel flush_memory_cache n'est implémenté que pour Linux.")
-            return
+        Récupère le titre de la fenêtre actuellement au premier plan.
 
-        print("Rituel Chiron : Vidage des caches mémoire système...")
-        try:
-            # Synchronise les données sur disque avant de vider.
-            subprocess.run(["sync"], check=True)
-            # Écrit '3' dans drop_caches pour vider tous les caches.
-            with open('/proc/sys/vm/drop_caches', 'w') as f:
-                f.write('3\n')
-            print("Rituel accompli. Les caches mémoire ont été purgés.")
-        except PermissionError:
-            print("ERREUR : Privilèges insuffisants pour exécuter le rituel flush_memory_cache.")
-        except Exception as e:
-            print(f"ERREUR lors de l'exécution du rituel flush_memory_cache : {e}")
-
-    def reduce_cpu_priority(self, increment: int = 10):
+        Le "Pourquoi": Connaître le contexte de l'utilisateur est un stimulus
+        essentiel pour que l'Oracle puisse prendre des décisions pertinentes.
         """
-        Rituel pour réduire la priorité CPU du processus Gardien lui-même.
-        Permet de céder des ressources en cas de contention.
-        """
-        print(f"Rituel Chiron : Réduction de la priorité CPU (nice +{increment})...")
-        try:
-            current_nice = os.nice(0)
-            os.nice(increment)
-            new_nice = os.nice(0)
-            print(f"Rituel accompli. Priorité 'nice' passée de {current_nice} à {new_nice}.")
-        except Exception as e:
-            print(f"ERREUR lors de l'exécution du rituel reduce_cpu_priority : {e}")
+        hwnd = GetForegroundWindow()
+        if not hwnd:
+            return "No Active Window"
 
-    def terminate_process_by_signature(self, signature: str):
-        """
-        Rituel pour trouver et terminer un processus basé sur une signature
-        (ex: une partie de son nom ou de sa ligne de commande).
-        """
-        print(f"Rituel Chiron : Recherche et terminaison des processus avec la signature '{signature}'...")
-        terminated_count = 0
-        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-            try:
-                # La signature peut être dans le nom ou la ligne de commande
-                if signature in proc.info['name'] or (proc.info['cmdline'] and signature in ' '.join(proc.info['cmdline'])):
-                    if proc.pid == os.getpid(): # Ne pas se terminer soi-même
-                        continue
+        length = user32.GetWindowTextLengthW(hwnd)
+        if length == 0:
+            return "Unnamed Window"
 
-                    print(f"  Processus correspondant trouvé : PID={proc.pid}, Nom='{proc.info['name']}'. Terminaison...")
-                    p = psutil.Process(proc.pid)
-                    p.terminate() # Envoie SIGTERM pour une terminaison propre
-                    terminated_count += 1
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
+        buff = ctypes.create_unicode_buffer(length + 1)
+        GetWindowTextW(hwnd, buff, length + 1)
+        return buff.value
 
-        if terminated_count > 0:
-            print(f"Rituel accompli. {terminated_count} processus terminés.")
+    def show_sovereign_message(self, title: str, message: str):
+        """
+        Affiche une boîte de message native Windows.
+
+        Le "Pourquoi": C'est un moyen direct et non-intrusif de communiquer une
+        information importante ou une alerte à l'utilisateur, en utilisant une
+        interface familière et intégrée au système.
+        """
+        _log.info(f"Affichage du message souverain: '{title}' - '{message}'")
+        MB_OK = 0x00000000
+        MB_ICONINFORMATION = 0x00000040
+        MessageBoxW(None, message, title, MB_OK | MB_ICONINFORMATION)
+
+    def execute_action(self, action):
+        """
+        Exécute une action en fonction de son ID.
+        C'est le dispatcher principal pour les commandes de Chiron.
+        """
+        _log.info(f"Chiron exécute l'action: {action.id} avec les paramètres {action.parameters}")
+        if action.id == "SHOW_MESSAGE":
+            title = action.parameters.get("title", "Message du Vaisseau Guardian")
+            message = action.parameters.get("message", "Une action a été effectuée.")
+            self.show_sovereign_message(title, message)
+        elif action.id == "LOG_ONLY":
+            _log.info(f"Action de journalisation seule: {action.description}")
         else:
-            print(f"Aucun processus correspondant à la signature '{signature}' n'a été trouvé.")
+            _log.warning(f"Action inconnue ou non implémentée demandée à Chiron: {action.id}")
+# --- END OF FILE: core/chiron.py ---
