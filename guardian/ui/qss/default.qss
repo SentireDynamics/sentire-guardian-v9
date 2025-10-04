@@ -1,0 +1,36 @@
+/* Styles QSS pour l'Autel - Thème Sacré par défaut */
+
+/* Style global */
+QMainWindow {
+    background-color: #0a0a0a;
+    color: #e0e0e0;
+}
+
+/* État Ventral - Vert apaisant */
+.ventral {
+    background-color: #1a3d2e;
+    border: 2px solid #2ecc71;
+}
+
+/* État Sympathique - Orange alertant */
+.sympathetic {
+    background-color: #3d2a1a;
+    border: 2px solid #e67e22;
+}
+
+/* État Dorsal - Rouge protecteur */
+.dorsal {
+    background-color: #3d1a1a;
+    border: 2px solid #c0392b;
+}
+
+/* Score de résilience */
+QProgressBar {
+    border: 2px solid #555;
+    border-radius: 5px;
+    text-align: center;
+}
+
+QProgressBar::chunk {
+    background-color: #2ecc71;
+}
