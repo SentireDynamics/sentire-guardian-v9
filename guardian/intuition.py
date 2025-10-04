@@ -1,50 +1,49 @@
-"""
-Moteur d'Intuition ML - Feature Extraction & Analyse
+import joblib
+import numpy as np
+import os
+from sklearn.linear_model import LogisticRegression
 
-Épigraphe Doctrinale:
-Le moteur d'intuition extrait les features critiques des stimuli et applique
-les modèles ML pour prédire les tendances, détecter les anomalies, et guider
-les décisions adaptatives du Vaisseau.
+MODEL_PATH = "anomaly_model.joblib"
 
-Rôle dans la Résilience Souveraine:
-- Extraction de features depuis les stimuli
-- Détection d'anomalies via ML
-- Prédiction de tendances de résilience
-- Calibration adaptative des seuils
-- Interface avec ml/model_manager.py et ml/feature_extraction.py
-"""
-
-
-class IntuitionEngine:
+class AnomalyDetector:
     """
-    Moteur d'intuition ML du Vaisseau.
+    Le module d'Intuition, utilisant un modèle ML pour détecter des anomalies.
+
+    @doctrine
+    L'intuition complète la perception brute par une reconnaissance de formes subtiles.
+    Ce modèle, bien que simple, incarne le principe d'apprentissage. Il a été entraîné
+    à reconnaître des combinaisons "anormales" de métriques et fournit un score
+    quantifiant cette intuition. Ce score est un stimulus à part entière pour le
+    calcul de la résilience.
     """
-    
     def __init__(self):
-        """Initialise le moteur d'intuition."""
-        # TODO: Charger les modèles ML via ml/model_manager.py
-        pass
-    
-    def extract_features(self, stimuli: dict) -> dict:
+        if not os.path.exists(MODEL_PATH):
+            print(f"Modèle non trouvé à {MODEL_PATH}. Création d'un modèle factice.")
+            self._create_dummy_model()
+        self.model = joblib.load(MODEL_PATH)
+
+    def _create_dummy_model(self):
+        """Crée, entraîne et sauvegarde un modèle factice."""
+        X = np.random.rand(100, 2) * 100 # cpu_load, memory_usage
+        # Anomalies = haute charge CPU ET haute mémoire
+        y = ((X[:, 0] > 80) & (X[:, 1] > 80)).astype(int)
+
+        model = LogisticRegression()
+        model.fit(X, y)
+        joblib.dump(model, MODEL_PATH)
+
+    def predict_anomaly(self, metrics: dict) -> float:
         """
-        Extrait les features des stimuli.
-        
-        Args:
-            stimuli: Stimuli perçus
-        
-        Returns:
-            Features extraites
+        Prédit un score d'anomalie basé sur les métriques système.
+        Retourne la probabilité d'être dans la classe "anomalie" (1).
         """
-        return {}
-    
-    def predict_trend(self, features: dict) -> dict:
-        """
-        Prédit les tendances de résilience.
-        
-        Args:
-            features: Features extraites
-        
-        Returns:
-            Prédictions de tendance
-        """
-        return {}
+        cpu = metrics.get('cpu_load', 50.0)
+        mem = metrics.get('memory_usage', 50.0)
+
+        # Le modèle attend un array 2D
+        features = np.array([[cpu, mem]])
+
+        # predict_proba retourne les probabilités pour [classe_0, classe_1]
+        anomaly_prob = self.model.predict_proba(features)[0][1]
+
+        return anomaly_prob

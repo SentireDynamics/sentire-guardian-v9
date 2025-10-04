@@ -1,51 +1,30 @@
+# core/verbe_pur.py
 """
-Verbe Pur - Schémas de Messages Purs (Rituel II)
-
-Épigraphe Doctrinale:
-Le Verbe Pur définit les schémas de communication sacrés entre tous les
-modules du Vaisseau. Messages typés, validés, et purs selon le Rituel II.
-Utilise Pydantic pour la validation et la sérialisation.
-
-Rôle dans la Résilience Souveraine:
-- Schémas de messages entre modules
-- Validation stricte des données (Pydantic)
-- Sérialisation/désérialisation sûre
-- Contrat de communication inter-modules
-- Garantie d'intégrité des échanges
+Sanctuaire: Les Schémas de Messages Purs.
+Doctrine: La communication interne de l'Esprit doit être immuable et sans effet
+de bord. Ce sanctuaire utilise des dataclasses pour définir des 'Verbes Purs',
+des structures de données pures qui transportent l'information entre les
+sanctuaires sans risque de corruption. Ils sont les mots du langage interne du Vaisseau.
 """
+from dataclasses import dataclass, field
+from typing import Any, Dict
 
-from typing import Literal, Optional
-from enum import Enum
+@dataclass(frozen=True)
+class Stimulus:
+    """
+    Un artefact représentant un 'moment' de perception,
+    la somme de toutes les sensations du Vaisseau à un instant t.
+    """
+    material_perception: Dict[str, Any] = field(default_factory=dict)
+    contextual_perception: str = ""
 
-
-class StimulusType(str, Enum):
-    """Types de stimuli doctrinaux."""
-    FAULT = "FAULT"      # Défaillance technique
-    DRIFT = "DRIFT"      # Dérive comportementale
-    ATTACK = "ATTACK"    # Attaque hostile
-
-
-class PolyvagalState(str, Enum):
-    """États polyvagaux fondamentaux."""
-    VENTRAL = "VENTRAL"          # Sécurité sociale
-    SYMPATHETIC = "SYMPATHETIC"  # Mobilisation
-    DORSAL = "DORSAL"            # Immobilisation
-
-
-# TODO: Ajouter schémas Pydantic complets quand pydantic est installé
-class StimulusMessage:
-    """Schéma d'un message de stimulus."""
-    
-    def __init__(self, stimulus_type: str, intensity: float, context: dict = None):
-        self.type = stimulus_type
-        self.intensity = intensity
-        self.context = context or {}
-
-
-class StateMessage:
-    """Schéma d'un message d'état."""
-    
-    def __init__(self, state: str, resilience_score: float, timestamp: float):
-        self.state = state
-        self.resilience_score = resilience_score
-        self.timestamp = timestamp
+@dataclass(frozen=True)
+class StateTransition:
+    """
+    Un artefact qui encapsule le passage d'un état polyvagal à un autre,
+    la cause de cette transition et le score de résilience associé.
+    """
+    from_state: Any # PolyvagalState
+    to_state: Any   # PolyvagalState
+    resilience_score: float
+    triggering_stimulus: Stimulus

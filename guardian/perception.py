@@ -1,36 +1,33 @@
+# guardian/perception.py
 """
-Yeux du Vaisseau - Fusion Sensorielle
-
-Épigraphe Doctrinale:
-Le système de perception unifie tous les canaux sensoriels du Vaisseau:
-capteurs matériels (Oracle_Unification_Souveraine.dll), perception générative
-(Llama.cpp), et analyse contextuelle. C'est le premier maillon du cycle de résilience.
-
-Rôle dans la Résilience Souveraine:
-- Fusion des sources de perception (hardware + LLM)
-- Détection précoce des stimuli (FAULT, DRIFT, ATTACK)
-- Enrichissement contextuel via l'Oracle génératif
-- Interface unifiée pour le reste du Vaisseau
+Sanctuaire: Le Moteur de Fusion Sensorielle.
+Doctrine: L'existence est perception. Ce sanctuaire est le creuset où les perceptions
+brutes (matérielles, via l'Oracle) et les perceptions génératives (contextuelles, via Llama)
+sont fusionnées en un flux de conscience unifié, le 'Stimulus'. C'est ce flux qui
+nourrit la Machine Polyvagale et la Conscience.
 """
-
+from guardian.perception_oracle import PerceptionOracle
+from guardian.perception_llama import PerceptionLlama
+from core.verbe_pur import Stimulus
 
 class PerceptionEngine:
-    """
-    Moteur de perception unifié du Vaisseau Guardian V9.
-    
-    Fusionne les perceptions Oracle (hardware) et Llama.cpp (générative).
-    """
-    
+    """Agrège les données de tous les canaux de perception."""
+
     def __init__(self):
-        """Initialise le moteur de perception."""
-        # TODO: Initialiser perception_oracle et perception_llama
-        pass
-    
-    def perceive(self) -> dict:
+        self.oracle = PerceptionOracle()
+        self.llama = PerceptionLlama()
+
+    def gather_stimuli(self) -> Stimulus:
         """
-        Effectue un cycle de perception complet.
-        
-        Returns:
-            Dict contenant les stimuli détectés et leur contexte
+        Rituel: Fusion Sensorielle.
+        Combine les perceptions en un artefact Stimulus unique et pur.
         """
-        return {}
+        material_data = self.oracle.sense_material_world()
+        # // TODO: Formater les logs pour Llama
+        raw_logs = "..."
+        contextual_analysis = self.llama.sense_context(raw_logs)
+
+        return Stimulus(
+            material_perception=material_data,
+            contextual_perception=contextual_analysis
+        )

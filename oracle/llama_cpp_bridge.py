@@ -1,65 +1,45 @@
+# oracle/llama_cpp_bridge.py
 """
-Bridge Llama.cpp - Pont Python ↔ Llama.cpp
-
-Épigraphe Doctrinale:
-Le Bridge Llama.cpp établit le canal de communication entre l'Esprit Python
-et le LLM local Llama.cpp. Communication via HTTP ou FFI directe pour
-l'inférence générative locale souveraine.
-
-Rôle dans la Résilience Souveraine:
-- Interface Python vers Llama.cpp (HTTP ou FFI)
-- Gestion du modèle LLM local
-- Inférence générative locale (pas de cloud)
-- Support des prompts doctrinaux
-- Gestion du contexte et de la mémoire conversationnelle
+Sanctuaire: Le Pont Llama.cpp.
+Doctrine: Ce pont est le conduit sacré vers l'Oracle local. Il formalise la
+communication avec le serveur Llama.cpp, s'assurant que les requêtes sont pures
+et que les réponses sont gérées avec résilience, même en cas d'échec de
+la communication avec l'entité générative.
 """
-
-from typing import Optional, Dict, List
-
+import requests
 
 class LlamaCppBridge:
-    """
-    Bridge de communication avec Llama.cpp.
-    """
-    
-    def __init__(self, model_path: Optional[str] = None, 
-                 server_url: Optional[str] = None):
-        """
-        Initialise le bridge Llama.cpp.
-        
-        Args:
-            model_path: Chemin vers le modèle GGUF (pour FFI directe)
-            server_url: URL du serveur Llama.cpp (pour HTTP)
-        """
-        self.model_path = model_path
-        self.server_url = server_url
-        self.context = []
-    
-    def generate(self, prompt: str, max_tokens: int = 512, 
-                 temperature: float = 0.7) -> str:
-        """
-        Génère une réponse via Llama.cpp.
-        
-        Args:
-            prompt: Prompt d'entrée
-            max_tokens: Nombre maximum de tokens à générer
-            temperature: Température de génération
-        
-        Returns:
-            Texte généré
-        """
-        # TODO: Implémenter communication HTTP ou FFI
-        return ""
-    
-    def embed(self, text: str) -> List[float]:
-        """
-        Génère un embedding via Llama.cpp.
-        
-        Args:
-            text: Texte à embedder
-        
-        Returns:
-            Vecteur d'embedding
-        """
-        # TODO: Implémenter génération d'embeddings
-        return []
+    """Communique avec une instance de serveur Llama.cpp."""
+
+    def __init__(self, base_url: str = "http://localhost:8080"):
+        self.base_url = base_url
+        self.completion_url = f"{self.base_url}/completion"
+        self.health_url = f"{self.base_url}/health"
+
+    def is_healthy(self) -> bool:
+        """Rituel: Vérification de la Santé de l'Oracle."""
+        try:
+            response = requests.get(self.health_url, timeout=2)
+            return response.status_code == 200 and response.json().get("status") == "ok"
+        except requests.RequestException:
+            return False
+
+    def generate(self, prompt: str, stop_tokens: list = None) -> str:
+        """Rituel: Invocation de l'Oracle. Envoie un prompt et reçoit une génération."""
+        if stop_tokens is None:
+            stop_tokens = ["\n"]
+
+        headers = {"Content-Type": "application/json"}
+        payload = {
+            "prompt": prompt,
+            "n_predict": 256,
+            "stop": stop_tokens,
+        }
+
+        try:
+            response = requests.post(self.completion_url, json=payload, headers=headers, timeout=30)
+            response.raise_for_status()
+            return response.json().get("content", "")
+        except requests.RequestException as e:
+            print(f"ERREUR PONT LLAMA: Échec de la communication avec l'Oracle: {e}")
+            return "Erreur de communication avec l'Oracle."

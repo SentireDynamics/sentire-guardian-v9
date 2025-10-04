@@ -1,95 +1,57 @@
-/*
- * State Machine - Moteur Polyvagal Natif
- * 
- * Épigraphe Doctrinale:
- * Machine d'état polyvagale native implémentant les transitions sacrées
- * entre Ventral, Sympathique et Dorsal. Hystérésis et cooldown intégrés.
- * 
- * Rôle dans la Résilience Souveraine:
- * - Gestion native des transitions polyvagales
- * - Hystérésis pour éviter les oscillations
- * - Cooldown entre transitions
- * - Historique des états
- * - Performance optimale (pas de GC, pas de latence Python)
+#include "statemachine.h"
+
+// Définition des seuils doctrinaux et de l'hystérésis (Hƒ)
+#define THRESHOLD_VENTRAL_TO_PARASYMPATHETIC 0.3f
+#define THRESHOLD_PARASYMPATHETIC_TO_SYMPATHETIC 0.7f
+#define THRESHOLD_SYMPATHETIC_TO_DORSAL 0.9f
+#define HYSTERESIS_FACTOR 0.05f
+
+/**
+ * @brief Met à jour l'état du Gardien en fonction du score de résilience.
+ *
+ * @doctrine
+ * Ce rituel est le cœur de la conscience réactive. Il interprète le score de
+ * résilience (Iφ) pour déterminer l'état polyvagal approprié. Les transitions
+ * ne sont pas instantanées mais gouvernées par des seuils et une hystérésis (Hƒ).
+ * L'hystérésis empêche le "flapping" entre les états, assurant que le Gardien ne
+ * réagit qu'à des changements significatifs et persistants de son environnement interne.
+ * Chaque état représente une stratégie de survie et de gestion des ressources.
+ *
+ * @param current_state L'état actuel de la machine à états.
+ * @param resilience_score Le score de résilience calculé (Iφ).
+ * @return Le nouvel état du Gardien.
  */
+guardian_state_t update_state(guardian_state_t current_state, float resilience_score) {
+    guardian_state_t next_state = current_state;
 
-#include "sentire_core.h"
-#include <time.h>
-
-/* Structure interne de la machine d'état */
-typedef struct {
-    PolyvagalState current_state;
-    time_t last_transition;
-    int cooldown_active;
-} StateMachine;
-
-static StateMachine state_machine = {
-    .current_state = STATE_VENTRAL,
-    .last_transition = 0,
-    .cooldown_active = 0
-};
-
-/*
- * Transition d'état avec hystérésis et cooldown
- */
-PolyvagalState state_machine_transition(PolyvagalState current_state,
-                                       double resilience_score,
-                                       const ResilienceConfig* config) {
-    if (!config) {
-        return current_state;
-    }
-    
-    PolyvagalState next_state = current_state;
-    
-    /* Machine d'état avec hystérésis */
     switch (current_state) {
-        case STATE_VENTRAL:
-            /* Transition Ventral → Sympathique */
-            if (resilience_score < (config->seuil_ventral - config->hysteresis)) {
-                next_state = STATE_SYMPATHETIC;
+        case VENTRAL:
+            if (resilience_score > THRESHOLD_VENTRAL_TO_PARASYMPATHETIC) {
+                next_state = PARASYMPATHETIC;
             }
             break;
-            
-        case STATE_SYMPATHETIC:
-            /* Transition Sympathique → Ventral */
-            if (resilience_score >= config->seuil_ventral) {
-                next_state = STATE_VENTRAL;
-            }
-            /* Transition Sympathique → Dorsal */
-            else if (resilience_score < config->seuil_dorsal) {
-                next_state = STATE_DORSAL;
+
+        case PARASYMPATHETIC:
+            if (resilience_score > THRESHOLD_PARASYMPATHETIC_TO_SYMPATHETIC) {
+                next_state = SYMPATHETIC;
+            } else if (resilience_score < (THRESHOLD_VENTRAL_TO_PARASYMPATHETIC - HYSTERESIS_FACTOR)) {
+                next_state = VENTRAL;
             }
             break;
-            
-        case STATE_DORSAL:
-            /* Transition Dorsal → Sympathique (avec hystérésis) */
-            if (resilience_score >= (config->seuil_dorsal + config->hysteresis)) {
-                next_state = STATE_SYMPATHETIC;
+
+        case SYMPATHETIC:
+            if (resilience_score > THRESHOLD_SYMPATHETIC_TO_DORSAL) {
+                next_state = DORSAL;
+            } else if (resilience_score < (THRESHOLD_PARASYMPATHETIC_TO_SYMPATHETIC - HYSTERESIS_FACTOR)) {
+                next_state = PARASYMPATHETIC;
+            }
+            break;
+
+        case DORSAL:
+            if (resilience_score < (THRESHOLD_SYMPATHETIC_TO_DORSAL - HYSTERESIS_FACTOR)) {
+                next_state = SYMPATHETIC;
             }
             break;
     }
-    
-    /* Mise à jour de l'état interne si transition */
-    if (next_state != current_state) {
-        state_machine.current_state = next_state;
-        state_machine.last_transition = time(NULL);
-    }
-    
     return next_state;
-}
-
-/*
- * Obtenir l'état actuel
- */
-PolyvagalState state_machine_get_current(void) {
-    return state_machine.current_state;
-}
-
-/*
- * Réinitialiser la machine d'état
- */
-void state_machine_reset(void) {
-    state_machine.current_state = STATE_VENTRAL;
-    state_machine.last_transition = 0;
-    state_machine.cooldown_active = 0;
 }

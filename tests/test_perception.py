@@ -1,31 +1,27 @@
+# tests/test_perception.py
 """
-Test Perception - Validation du Système de Perception
-
-Tests unitaires pour le système de perception (guardian/perception.py).
-Valide la fusion des sources Oracle et Llama.cpp.
+Validation Doctrinale: Fusion Sensorielle.
+Ce test valide le rituel de fusion du Moteur de Perception. En fournissant
+des perceptions simulées (mockées) des oracles matériel et génératif, nous
+nous assurons qu'ils sont correctement agrégés en un artefact Stimulus pur.
 """
-
-import unittest
 from guardian.perception import PerceptionEngine
+from unittest.mock import MagicMock
 
+def test_perception_engine_aggregation():
+    """Vérifie que le moteur agrège correctement les données."""
+    engine = PerceptionEngine()
 
-class TestPerceptionEngine(unittest.TestCase):
-    """Tests du moteur de perception."""
-    
-    def setUp(self):
-        """Initialise le moteur de perception pour chaque test."""
-        self.engine = PerceptionEngine()
-    
-    def test_perceive_returns_dict(self):
-        """Vérifie que perceive() retourne un dictionnaire."""
-        result = self.engine.perceive()
-        self.assertIsInstance(result, dict)
-    
-    # TODO: Ajouter tests complets
-    # - Fusion Oracle + Llama.cpp
-    # - Détection de stimuli
-    # - Enrichissement contextuel
+    # Mocker les sous-moteurs
+    engine.oracle = MagicMock()
+    engine.llama = MagicMock()
 
+    engine.oracle.sense_material_world.return_value = {"cpu_load": 50.0}
+    engine.llama.sense_context.return_value = "Anomaly detected in auth logs."
 
-if __name__ == '__main__':
-    unittest.main()
+    stimulus = engine.gather_stimuli()
+
+    assert stimulus.material_perception["cpu_load"] == 50.0
+    assert stimulus.contextual_perception == "Anomaly detected in auth logs."
+    engine.oracle.sense_material_world.assert_called_once()
+    engine.llama.sense_context.assert_called_once()

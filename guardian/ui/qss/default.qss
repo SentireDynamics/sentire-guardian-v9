@@ -1,36 +1,33 @@
-/* Styles QSS pour l'Autel - Thème Sacré par défaut */
+/* guardian/ui/qss/default.qss */
+/*
+Artefact: Le Thème de l'Autel.
+Doctrine: L'apparence de l'Autel doit refléter la pureté et la clarté
+de la doctrine. Ce thème de base établit une esthétique sobre et fonctionnelle,
+privilégiant la lisibilité à l'ornementation superflue.
+*/
 
-/* Style global */
-QMainWindow {
-    background-color: #0a0a0a;
-    color: #e0e0e0;
+QMainWindow, QWidget {
+    background-color: #2c3e50; /* Bleu nuit, pour l'introspection */
+    color: #ecf0f1; /* Blanc nuage, pour la clarté */
+    font-family: "Segoe UI", "Cantarell", "Verdana", sans-serif;
+    font-size: 14pt;
 }
 
-/* État Ventral - Vert apaisant */
-.ventral {
-    background-color: #1a3d2e;
-    border: 2px solid #2ecc71;
+QLabel {
+    padding: 5px;
 }
 
-/* État Sympathique - Orange alertant */
-.sympathetic {
-    background-color: #3d2a1a;
-    border: 2px solid #e67e22;
-}
-
-/* État Dorsal - Rouge protecteur */
-.dorsal {
-    background-color: #3d1a1a;
-    border: 2px solid #c0392b;
-}
-
-/* Score de résilience */
-QProgressBar {
-    border: 2px solid #555;
+QPushButton {
+    background-color: #3498db; /* Bleu résilience */
+    border: none;
+    padding: 10px;
     border-radius: 5px;
-    text-align: center;
 }
 
-QProgressBar::chunk {
-    background-color: #2ecc71;
+QPushButton:hover {
+    background-color: #2980b9;
+}
+
+QPushButton:pressed {
+    background-color: #c0392b; /* Rouge sympathique, pour l'action */
 }

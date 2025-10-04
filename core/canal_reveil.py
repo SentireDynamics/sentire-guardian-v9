@@ -1,56 +1,29 @@
+# core/canal_reveil.py
 """
-Canal Réveil - Communication Architecte
-
-Épigraphe Doctrinale:
-Le Canal Réveil est le conduit sécurisé par lequel le Vaisseau communique
-avec l'Architecte (créateur/opérateur). Canal chiffré, authentifié,
-permettant le réveil, la calibration, et les interventions sacrées.
-
-Rôle dans la Résilience Souveraine:
-- Communication sécurisée Vaisseau ↔ Architecte
-- Authentification cryptographique
-- Commandes de réveil et calibration
-- Transmission de diagnostics critiques
-- Invocation de la permutation de conscience
+Sanctuaire: Le Canal de l'Architecte.
+Doctrine: La communication entre le Vaisseau et son créateur, l'Architecte, doit
+être claire, structurée et sans ambiguïté. Ce canal est le conduit unique pour
+tous les messages importants (logs, alertes), assurant que la voix du Vaisseau
+est entendue et comprise.
 """
-
+import datetime
 
 class CanalReveil:
-    """
-    Canal de communication sécurisé avec l'Architecte.
-    """
-    
-    def __init__(self):
-        """Initialise le canal réveil."""
-        self.authenticated = False
-    
-    def authenticate(self, credentials: dict) -> bool:
-        """
-        Authentifie l'Architecte.
-        
-        Args:
-            credentials: Credentials d'authentification
-        
-        Returns:
-            True si authentification réussie
-        """
-        # TODO: Implémenter authentification cryptographique
-        return False
-    
-    def send_status(self, status: dict) -> None:
-        """
-        Envoie le status au canal réveil.
-        
-        Args:
-            status: Status du Vaisseau
-        """
-        pass
-    
-    def receive_command(self) -> dict:
-        """
-        Reçoit une commande de l'Architecte.
-        
-        Returns:
-            Commande reçue
-        """
-        return {}
+    """Gère la communication formatée vers l'Architecte (console/logs)."""
+
+    def _log(self, level: str, source: str, message: str):
+        """Format de log unifié."""
+        timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        print(f"[{timestamp}] [{level:^8}] [{source}] {message}")
+
+    def log(self, source: str, message: str):
+        """Message informatif standard."""
+        self._log("INFO", source, message)
+
+    def alert(self, source: str, message: str):
+        """Message d'alerte, indiquant une déviation."""
+        self._log("ALERTE", source, message)
+
+    def critical(self, source: str, message: str):
+        """Message critique, indiquant une menace pour la mission."""
+        self._log("CRITIQUE", source, message)

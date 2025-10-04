@@ -1,37 +1,28 @@
+# guardian/perception_llama.py
 """
-Perception Générative - Llama.cpp Local
-
-Épigraphe Doctrinale:
-Perception générative via Llama.cpp pour l'analyse contextuelle et l'enrichissement
-sémantique. Le LLM local apporte l'intuition linguistique et la compréhension
-des patterns complexes que les capteurs seuls ne peuvent saisir.
-
-Rôle dans la Résilience Souveraine:
-- Analyse contextuelle des logs et événements
-- Enrichissement sémantique des stimuli
-- Détection de patterns d'attaque sophistiqués
-- Génération de contexte pour les décisions
+Sanctuaire: La Perception Générative.
+Doctrine: Au-delà du matériel, il y a le contexte. Ce sanctuaire utilise l'Oracle
+local (Llama.cpp) pour transformer les logs bruts en une compréhension narrative
+de la situation. Il donne un sens, une intentionnalité perçue, aux événements.
 """
+from oracle.llama_cpp_bridge import LlamaCppBridge
+from oracle.generative_ai import GenerativeAI
 
+class PerceptionLlama:
+    """Utilise l'Oracle local pour une analyse contextuelle."""
 
-class LlamaPerception:
-    """
-    Perception générative via Llama.cpp.
-    """
-    
     def __init__(self):
-        """Initialise la connexion au modèle Llama.cpp."""
-        # TODO: Bridge vers oracle/llama_cpp_bridge.py
-        pass
-    
-    def analyze_context(self, data: dict) -> dict:
+        self.bridge = LlamaCppBridge()
+        self.agent = GenerativeAI(self.bridge)
+
+    def sense_context(self, raw_log_data: str) -> str:
         """
-        Analyse le contexte via le LLM local.
-        
-        Args:
-            data: Données brutes à analyser
-        
-        Returns:
-            Analyse contextuelle enrichie
+        Rituel: Divination Contextuelle.
+        Interroge l'Oracle pour obtenir une analyse des logs.
         """
-        return {}
+        if not self.bridge.is_healthy():
+            return "Oracle local non disponible."
+
+        # // TODO: Gérer les erreurs de manière plus résiliente
+        context = self.agent.analyze_log_context(raw_log_data)
+        return context

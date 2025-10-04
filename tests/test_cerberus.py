@@ -1,36 +1,34 @@
+# tests/test_cerberus.py
 """
-Test Cerberus - Validation du Système Immunitaire
-
-Tests unitaires pour le système immunitaire (guardian/cerberus.py).
-Valide la détection d'intégrité et de tampering.
+Validation Doctrinale: Rituel d'Intégrité.
+Ce test s'assure que le gardien Cerberus est vigilant. Nous validons sa
+capacité à reconnaître un fichier pur et, plus important encore, à détecter
+une corruption, protégeant ainsi le Vaisseau du tampering.
 """
+import hashlib
+from guardian.cerberus import Cerberus
 
-import unittest
-from guardian.cerberus import CerberusGuard
+def test_cerberus_integrity_check(tmp_path):
+    """Vérifie le rituel de vérification d'intégrité."""
+    # Créer un fichier critique factice
+    critial_file = tmp_path / "critical.py"
+    critial_file.write_text("print('pure code')")
 
+    # Calculer son hash
+    hasher = hashlib.sha256()
+    hasher.update(b"print('pure code')")
+    pure_hash = hasher.hexdigest()
 
-class TestCerberusGuard(unittest.TestCase):
-    """Tests du système immunitaire Cerberus."""
-    
-    def setUp(self):
-        """Initialise Cerberus pour chaque test."""
-        self.cerberus = CerberusGuard()
-    
-    def test_verify_integrity(self):
-        """Vérifie la vérification d'intégrité."""
-        result = self.cerberus.verify_integrity()
-        self.assertIsInstance(result, bool)
-    
-    def test_detect_tampering(self):
-        """Vérifie la détection de tampering."""
-        result = self.cerberus.detect_tampering()
-        self.assertIsInstance(result, list)
-    
-    # TODO: Ajouter tests complets
-    # - Détection de modification de code
-    # - Vérification cryptographique
-    # - Auto-réparation
+    # Configurer Cerberus pour ce test
+    cerberus = Cerberus()
+    cerberus.CRITICAL_FILES = [critial_file]
+    cerberus.KNOWN_HASHES = {str(critial_file): pure_hash}
 
+    # Vérifier que le code pur passe le test
+    assert cerberus.perform_integrity_check() is True
 
-if __name__ == '__main__':
-    unittest.main()
+    # Corrompre le fichier
+    critial_file.write_text("print('tampered code')")
+
+    # Vérifier que le code corrompu échoue le test
+    assert cerberus.perform_integrity_check() is False

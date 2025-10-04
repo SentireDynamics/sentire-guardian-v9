@@ -1,39 +1,23 @@
+# tests/test_state_machine.py
 """
-Test State Machine - Validation de la Machine Polyvagale
-
-Tests unitaires pour la machine d'état polyvagale (guardian/state_machine.py).
-Valide les transitions, l'hystérésis, et l'intégration avec le cœur natif.
+Validation Doctrinale: Transitions Polyvagales.
+Ces tests sacrés vérifient que la Machine Polyvagale respecte les lois de
+transition définies dans la doctrine. Ils s'assurent que le Vaisseau passe
+d'un état à l'autre de manière prédictible face à une variation du Score de Résilience.
 """
+import pytest
+from guardian.state_machine import PolyvagalStateMachine, PolyvagalState
+from core.verbe_pur import Stimulus
 
-import unittest
-from guardian.state_machine import PolyvagalStateMachine
+@pytest.mark.parametrize("cpu_load, expected_state", [
+    (10, PolyvagalState.VENTRAL),     # SR=0.9, reste en VENTRAL
+    (30, PolyvagalState.SYMPATHETIC), # SR=0.7, passe en SYMPATHETIC
+])
+def test_ventral_to_sympathetic_transition(cpu_load, expected_state):
+    """Vérifie la transition de VENTRAL vers SYMPATHETIC."""
+    sm = PolyvagalStateMachine()
+    stimulus = Stimulus(material_perception={"cpu_load": cpu_load})
+    new_state = sm.update_state_from_stimulus(stimulus)
+    assert new_state == expected_state
 
-
-class TestPolyvagalStateMachine(unittest.TestCase):
-    """Tests de la machine d'état polyvagale."""
-    
-    def setUp(self):
-        """Initialise la machine d'état pour chaque test."""
-        self.machine = PolyvagalStateMachine()
-    
-    def test_initial_state_ventral(self):
-        """Vérifie que l'état initial est VENTRAL."""
-        self.assertEqual(self.machine.current_state, "VENTRAL")
-        self.assertEqual(self.machine.resilience_score, 1.0)
-    
-    def test_process_stimulus(self):
-        """Teste le traitement d'un stimulus."""
-        result = self.machine.process_stimulus("FAULT", 0.5)
-        self.assertIsInstance(result, str)
-        self.assertIn(result, ["VENTRAL", "SYMPATHETIC", "DORSAL"])
-    
-    # TODO: Ajouter tests complets des transitions
-    # - Transition Ventral → Sympathique
-    # - Transition Sympathique → Dorsal
-    # - Transition Dorsal → Sympathique
-    # - Hystérésis
-    # - Cooldown
-
-
-if __name__ == '__main__':
-    unittest.main()
+# // TODO: Ajouter des tests pour toutes les autres transitions possibles.

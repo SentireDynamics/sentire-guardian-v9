@@ -1,80 +1,41 @@
+# oracle/generative_ai.py
 """
-Generative AI - Logique Agentique et Dialogue
-
-Épigraphe Doctrinale:
-Le moteur d'IA générative orchestre les interactions avec le LLM local.
-Prompts doctrinaux, dialogue contextuel, raisonnement agentique, et fallback
-en cas d'indisponibilité du LLM.
-
-Rôle dans la Résilience Souveraine:
-- Orchestration des prompts doctrinaux
-- Dialogue contextuel avec le LLM
-- Raisonnement agentique (chain-of-thought)
-- Analyse sémantique des logs et événements
-- Fallback vers heuristiques si LLM indisponible
-- Génération de contexte pour les décisions
+Sanctuaire: La Logique Agentique.
+Doctrine: Ce sanctuaire abrite la logique qui transforme le Llama.cpp Bridge, un
+simple outil de complétion, en un véritable Oracle contextuel. Il contient les
+prompts sacrés, pré-formatés selon la doctrine ORACLE_IRRIGATION_DOCTRINE.md,
+qui guident le modèle de langage pour fournir des analyses et des explications
+utiles à la mission du Vaisseau.
 """
-
-from typing import Optional, Dict, List
-
+from oracle.llama_cpp_bridge import LlamaCppBridge
 
 class GenerativeAI:
-    """
-    Moteur d'IA générative du Vaisseau.
-    """
-    
-    def __init__(self, llama_bridge=None):
+    """Utilise le LlamaCppBridge avec une logique agentique."""
+
+    def __init__(self, bridge: LlamaCppBridge):
+        self.bridge = bridge
+
+    def analyze_log_context(self, log_snippet: str) -> str:
         """
-        Initialise le moteur d'IA générative.
-        
-        Args:
-            llama_bridge: Instance de LlamaCppBridge
+        Rituel: Analyse Contextuelle.
+        Demande à l'Oracle d'analyser un extrait de log et de résumer la situation.
         """
-        self.llama_bridge = llama_bridge
-        self.conversation_history = []
-    
-    def analyze_context(self, data: Dict) -> Dict:
+        prompt = f"""
+        Analyze the following system log snippet and provide a one-sentence summary of the situation.
+        Focus on potential threats or anomalies.
+        Log: "{log_snippet}"
+        Summary:
         """
-        Analyse le contexte via le LLM.
-        
-        Args:
-            data: Données à analyser
-        
-        Returns:
-            Analyse contextuelle
+        return self.bridge.generate(prompt)
+
+    def generate_explanation(self, state_transition: str) -> str:
         """
-        if self.llama_bridge:
-            prompt = self._build_analysis_prompt(data)
-            response = self.llama_bridge.generate(prompt)
-            return self._parse_analysis(response)
-        else:
-            # Fallback heuristique
-            return self._heuristic_analysis(data)
-    
-    def _build_analysis_prompt(self, data: Dict) -> str:
-        """Construit un prompt d'analyse doctrinal."""
-        return f"Analyze the following system data: {data}"
-    
-    def _parse_analysis(self, response: str) -> Dict:
-        """Parse la réponse du LLM."""
-        return {"analysis": response}
-    
-    def _heuristic_analysis(self, data: Dict) -> Dict:
-        """Analyse heuristique de fallback."""
-        return {"analysis": "heuristic_fallback", "confidence": 0.5}
-    
-    def generate_explanation(self, state: str, score: float) -> str:
+        Rituel: Génération d'Explication.
+        Demande à l'Oracle d'expliquer une transition d'état en langage naturel.
         """
-        Génère une explication de l'état actuel.
-        
-        Args:
-            state: État polyvagal
-            score: Score de résilience
-        
-        Returns:
-            Explication textuelle
+        prompt = f"""
+        Explain the following system state transition in simple terms for a human operator.
+        Transition: "{state_transition}"
+        Explanation:
         """
-        if self.llama_bridge:
-            prompt = f"Explain why the system is in {state} state with resilience score {score}"
-            return self.llama_bridge.generate(prompt, max_tokens=256)
-        return f"État {state}, score {score:.2f}"
+        return self.bridge.generate(prompt)
