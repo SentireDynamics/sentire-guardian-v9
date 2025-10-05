@@ -1,80 +1,56 @@
-# --- START OF FILE: core/chiron.py ---
-"""
-Le Sanctuaire de Chiron - Le Centaure Exécuteur.
-
-Le "Pourquoi": Ce module est le bras armé du Vaisseau. Il encapsule toutes les
-interactions directes avec le système d'exploitation Windows via l'API Win32,
-en utilisant `ctypes`. En centralisant ces appels de bas niveau, on isole le reste
-de l'application des complexités de la plateforme, et on crée un point de contrôle
-unique pour l'exécution des actions souveraines.
-"""
-import ctypes
+import os
+import gc
+import time
 import logging
-from ctypes import wintypes
-
-_log = logging.getLogger(__name__)
-
-# Définition des prototypes de fonctions de l'API Windows
-user32 = ctypes.windll.user32
-MessageBoxW = user32.MessageBoxW
-MessageBoxW.argtypes = (wintypes.HWND, wintypes.LPCWSTR, wintypes.LPCWSTR, wintypes.UINT)
-MessageBoxW.restype = ctypes.c_int
-
-GetForegroundWindow = user32.GetForegroundWindow
-GetForegroundWindow.restype = wintypes.HWND
-
-GetWindowTextW = user32.GetWindowTextW
-GetWindowTextW.argtypes = (wintypes.HWND, wintypes.LPWSTR, ctypes.c_int)
-GetWindowTextW.restype = ctypes.c_int
 
 class Chiron:
-    """
-    La classe Chiron fournit des méthodes pour interagir avec l'OS Windows.
-    """
-    def get_foreground_window_title(self) -> str:
+    def kernel_level_tap(self):
         """
-        Récupère le titre de la fenêtre actuellement au premier plan.
-
-        Le "Pourquoi": Connaître le contexte de l'utilisateur est un stimulus
-        essentiel pour que l'Oracle puisse prendre des décisions pertinentes.
+        Tapotement sur la Nuque : Interagit avec le noyau (sync disque, flush DNS...).
         """
-        hwnd = GetForegroundWindow()
-        if not hwnd:
-            return "No Active Window"
+        try:
+            if os.name == "nt":
+                # Windows: flush DNS (placeholder, usually needs admin)
+                os.system("ipconfig /flushdns")
+            else:
+                os.sync()
+        except Exception as e:
+            logging.warning(f"kernel_level_tap échoué : {e}")
 
-        length = user32.GetWindowTextLengthW(hwnd)
-        if length == 0:
-            return "Unnamed Window"
-
-        buff = ctypes.create_unicode_buffer(length + 1)
-        GetWindowTextW(hwnd, buff, length + 1)
-        return buff.value
-
-    def show_sovereign_message(self, title: str, message: str):
+    def spirit_level_tap(self):
         """
-        Affiche une boîte de message native Windows.
+        Tapotement sur le Front : Forcer la GC, pause, nettoyage cache python.
+        """
+        try:
+            gc.collect()
+            time.sleep(0.05)
+        except Exception as e:
+            logging.warning(f"spirit_level_tap échoué : {e}")
 
-        Le "Pourquoi": C'est un moyen direct et non-intrusif de communiquer une
-        information importante ou une alerte à l'utilisateur, en utilisant une
-        interface familière et intégrée au système.
+    def flush_memory_cache(self):
         """
-        _log.info(f"Affichage du message souverain: '{title}' - '{message}'")
-        MB_OK = 0x00000000
-        MB_ICONINFORMATION = 0x00000040
-        MessageBoxW(None, message, title, MB_OK | MB_ICONINFORMATION)
+        Action de purification : Nettoie les caches mémoire applicatifs.
+        """
+        try:
+            # Adapter selon la nature du cache applicatif réel
+            gc.collect()
+        except Exception as e:
+            logging.warning(f"flush_memory_cache échoué : {e}")
 
-    def execute_action(self, action):
+    def reduce_cpu_priority(self):
         """
-        Exécute une action en fonction de son ID.
-        C'est le dispatcher principal pour les commandes de Chiron.
+        Action de régénération : Réduit la priorité CPU du processus.
         """
-        _log.info(f"Chiron exécute l'action: {action.id} avec les paramètres {action.parameters}")
-        if action.id == "SHOW_MESSAGE":
-            title = action.parameters.get("title", "Message du Vaisseau Guardian")
-            message = action.parameters.get("message", "Une action a été effectuée.")
-            self.show_sovereign_message(title, message)
-        elif action.id == "LOG_ONLY":
-            _log.info(f"Action de journalisation seule: {action.description}")
-        else:
-            _log.warning(f"Action inconnue ou non implémentée demandée à Chiron: {action.id}")
-# --- END OF FILE: core/chiron.py ---
+        try:
+            os.nice(10)
+        except Exception as e:
+            logging.warning(f"reduce_cpu_priority échoué : {e}")
+
+    def log_to_journal(self, message):
+        """
+        Interface sacrée de journalisation.
+        """
+        try:
+            logging.info(message)
+        except Exception as e:
+            print(f"[Erreur] log_to_journal: {e}")
