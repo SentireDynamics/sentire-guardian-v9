@@ -43,10 +43,10 @@ class Heresie:
 
     def to_markdown(self):
         return (f"- **Type**: {self.type}\n"
-                f"  - **Fichier**: `{{self.fichier}}` (ligne {{self.ligne}})\n"
-                f"  - **Gravité**: `{{self.gravite}}`\n"
-                f"  - **Hérésie**: {{self.texte}}\n"
-                f"  - **Verset violé**: {{self.verset}}\n")
+                f"  - **Fichier**: `{self.fichier}` (ligne {self.ligne})\n"
+                f"  - **Gravité**: `{self.gravite}`\n"
+                f"  - **Hérésie**: {self.texte}\n"
+                f"  - **Verset violé**: {self.verset}\n")
 
 # --- Sceau de la Dualité : analyse Python ---
 def scan_python_duality(python_file):
@@ -68,20 +68,20 @@ def scan_python_duality(python_file):
             if node.id in FORBIDDEN_SYMBOLS:
                 heresies.append(Heresie(
                     "Dualité", python_file, node.lineno, GRAVITE_MAJEURE,
-                    f"Usage profane de la Mathématique Sacrée '{{node.id}}' dans l'Esprit Python.",
+                    f"Usage profane de la Mathématique Sacrée '{node.id}' dans l'Esprit Python.",
                     "II. L'ARCHITECTURE SACRÉE"))
         def visit_Import(self, node):
             for alias in node.names:
                 if alias.name in DUALITY_IMPORTS_PY:
                     heresies.append(Heresie(
                         "Dualité", python_file, node.lineno, GRAVITE_AVERTISSEMENT,
-                        f"Import direct du Corps Natif ('{{alias.name}}') dans l'Esprit Python.",
+                        f"Import direct du Corps Natif ('{alias.name}') dans l'Esprit Python.",
                         "II. L'ARCHITECTURE SACRÉE"))
         def visit_ImportFrom(self, node):
             if node.module and node.module in DUALITY_IMPORTS_PY:
                 heresies.append(Heresie(
                     "Dualité", python_file, node.lineno, GRAVITE_AVERTISSEMENT,
-                    f"Import direct du Corps Natif ('{{node.module}}') dans l'Esprit Python.",
+                    f"Import direct du Corps Natif ('{node.module}') dans l'Esprit Python.",
                     "II. L'ARCHITECTURE SACRÉE"))
     MathSacreeVisitor().visit(tree)
     return heresies
@@ -93,10 +93,10 @@ def scan_c_duality(c_file):
         lines = f.readlines()
     for idx, line in enumerate(lines, 1):
         for keyword in STRATEGY_KEYWORDS_C:
-            if re.search(rf"\b{{re.escape(keyword)}}\b", line, re.IGNORECASE):
+            if re.search(rf"\b{re.escape(keyword)}\b", line, re.IGNORECASE):
                 heresies.append(Heresie(
                     "Dualité", c_file, idx, GRAVITE_MAJEURE,
-                    f"Trace d'une logique stratégique/consciente ('{{keyword}}') dans le Corps natif.",
+                    f"Trace d'une logique stratégique/consciente ('{keyword}') dans le Corps natif.",
                     "II. L'ARCHITECTURE SACRÉE"))
     return heresies
 
@@ -125,7 +125,7 @@ def scan_python_resilience(python_file):
             if "try:" not in contexte:
                 heresies.append(Heresie(
                     "Résilience", python_file, idx, GRAVITE_CRITIQUE,
-                    f"Rituel critique sans garde sacrée (try/except) : {{line.strip()}}",
+                    f"Rituel critique sans garde sacrée (try/except) : {line.strip()}",
                     "IV. LA PURETÉ AVANT LA FACILITÉ"))
     return heresies
 
@@ -154,12 +154,12 @@ def rapport_markdown(heresies, sortie):
 
 def main():
     racine = sys.argv[1] if len(sys.argv) > 1 else "."
-    print(f"Analyse doctrinale en cours sur : {{racine}}")
+    print(f"Analyse doctrinale en cours sur : {racine}")
     heresies = explorer_cathedrale(racine)
     rapport_markdown(heresies, "rapport_purete.md")
     print(f"Analyse terminée. Rapport généré : rapport_purete.md")
     if heresies:
-        print(f"{{len(heresies)}} hérésies détectées. Voir le rapport pour le détail.")
+        print(f"{len(heresies)} hérésies détectées. Voir le rapport pour le détail.")
     else:
         print("Aucune hérésie détectée. Le Vaisseau est pur.")
 
