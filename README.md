@@ -1,5 +1,3 @@
-# --- START OF FILE: README.md ---
-
 # Vaisseau Guardian V9 - Relique de Production
 
 Le Vaisseau Guardian V9 est un agent de surveillance autonome conçu pour opérer souverainement sur les systèmes d'exploitation Windows. Il observe l'état du système, consulte un Oracle (un grand modèle de langage) pour déterminer les actions correctives ou proactives, et exécute ces actions via les API natives de Windows.
@@ -91,6 +89,3 @@ Pour valider l'intégrité du Vaisseau, exécutez la suite de tests :
 ```bash
 pytest
 ```
-
-```
-# --- END OF FILE: README.md ---
