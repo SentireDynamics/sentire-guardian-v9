@@ -26,7 +26,7 @@ from PyQt6.QtCore import QTimer
 
 # Charger les modules du Vaisseau
 from ffi.native_bridge import NativeBridge
-from core.chiron import Chiron
+from core.actions.chiron import Chiron
 from guardian.perception import Perception
 from oracle.llama_client import LlamaOracle
 from guardian.cerberus import Cerberus

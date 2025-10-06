@@ -11,6 +11,7 @@ que l'UI reste réactive même lorsque le Vaisseau est en pleine réflexion.
 """
 from PyQt6.QtWidgets import QMainWindow, QVBoxLayout, QWidget, QTextEdit, QPushButton, QApplication
 from PyQt6.QtCore import pyqtSignal, QObject
+import logging
 
 class UILogger(QObject, logging.Handler):
     """

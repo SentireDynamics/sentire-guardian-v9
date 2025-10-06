@@ -10,6 +10,7 @@ sagesse supérieure.
 """
 import requests
 import logging
+import json
 from requests.exceptions import RequestException
 from core.verbe_pur import Stimulus, OracleResponse
 from core.exceptions import OracleSickness
@@ -56,22 +57,40 @@ Otherwise, recommend LOG_ONLY.
         Consulte l'Oracle avec le stimulus et retourne une réponse structurée.
         """
         prompt = self._build_prompt(stimulus)
+        
+        # --- Début de la Grammaire Purifiée (Syntaxe GBNF Officielle) ---
+        json_grammar = r'''root   ::= object
+value  ::= object | array | string | number | ("true" | "false" | "null") ws
+
+object ::=
+  "{" ws (
+            string ":" ws value
+    ("," ws string ":" ws value)*
+  )? "}" ws
+
+array  ::=
+  "[" ws (
+            value
+    ("," ws value)*
+  )? "]" ws
+
+string ::=
+  "\"" (
+    [^"\\\x7F\x00-\x1F] |
+    "\\" (["\\bfnrt] | "u" [0-9a-fA-F]{4})
+  )* "\"" ws
+
+number ::= ("-"? ([0-9] | [1-9] [0-9]{0,15})) ("." [0-9]+)? ([eE] [-+]? [0-9] [1-9]{0,15})? ws
+
+ws ::= | " " | "\n" [ \t]{0,20}
+'''
+        # --- Fin de la Grammaire Purifiée ---
+        
         payload = {
             "prompt": prompt,
             "n_predict": 256,
             "temperature": 0.2,
-            "grammar": """
-root   ::= object
-value  ::= object | array | string | number | "true" | "false" | "null"
-object ::= "{" ws ( string ":" ws value ("," ws string ":" ws value)* )? ws "}"
-array  ::= "[" ws ( value ("," ws value)* )? ws "]"
-string ::= "\"" (
-  [^"\\\\] |
-  "\\\\" (["\\\\/bfnrt] | "u" [0-9a-fA-F]{4})
-)* "\"" ws
-number ::= ("-")? ([0-9] | [1-9] [0-9]*) ("." [0-9]+)? (("e" | "E") ("+" | "-")? [0-9]+)? ws
-ws ::= ([ \t\n\r]+)?
-"""
+            "grammar": json_grammar
         }
 
         for attempt in range(self.retries + 1):
@@ -84,7 +103,6 @@ ws ::= ([ \t\n\r]+)?
                 content_str = response_json.get("content", "{}")
 
                 # Le modèle renvoie du JSON dans une chaîne, il faut le parser.
-                import json
                 parsed_content = json.loads(content_str)
 
                 oracle_response = OracleResponse.parse_obj(parsed_content)
