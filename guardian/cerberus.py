@@ -20,7 +20,17 @@ class Cerberus:
     """
     def __init__(self):
         # Liste blanche des actions autorisées.
-        self.allowed_actions = {"SHOW_MESSAGE", "LOG_ONLY"}
+        # Le "Pourquoi" : Cerberus protège contre les actions dangereuses, mais doit
+        # autoriser les actions thérapeutiques (flush, réduction priorité) essentielles
+        # pour la résilience du Vaisseau.
+        self.allowed_actions = {
+            "SHOW_MESSAGE", 
+            "LOG_ONLY",
+            "FLUSH_CACHE",
+            "REDUCE_PRIORITY",
+            "TERMINATE_PROCESS",
+            "SOMATIC_RESONANCE"
+        }
 
     def validate_action(self, action: Action) -> bool:
         """
