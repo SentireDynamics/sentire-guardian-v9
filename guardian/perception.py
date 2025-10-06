@@ -11,7 +11,7 @@ Il fournit également les actions de dernier recours en cas de défaillance de l
 import psutil
 import logging
 from core.verbe_pur import Stimulus, Action
-from core.chiron import Chiron
+from core.actions.chiron import Chiron
 
 _log = logging.getLogger(__name__)
 

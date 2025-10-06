@@ -9,7 +9,7 @@ le système hôte. C'est un test de pureté de l'intention d'action.
 """
 import pytest
 import ctypes
-from core.chiron import Chiron
+from core.actions.chiron import Chiron
 
 def test_chiron_show_sovereign_message(mocker):
     """
