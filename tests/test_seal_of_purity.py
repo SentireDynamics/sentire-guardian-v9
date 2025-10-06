@@ -175,7 +175,7 @@ class TestScanPythonTrinite(unittest.TestCase):
     def test_chiron_ml_fusion_detection(self):
         """Vérifie la détection de la fusion AGIR/SENTIR."""
         with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-            f.write("from core.chiron import action\n")
+            f.write("from core.actions.chiron import action\n")
             f.write("from ml import model\n")
             fname = f.name
         
