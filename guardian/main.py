@@ -104,7 +104,7 @@ class Orchestrator:
     def run(self):
         """Lance l'application et le cycle de vie."""
         self.ui.show()
-        self.timer.start(30 * 1000) # Un cycle toutes les 30 secondes
+        self.timer.start(60 * 1000) # Un cycle toutes les 60 secondes (optimisé pour performance)
         _log.info("Le Grand Œuvre a commencé. Le Vaisseau est éveillé.")
         sys.exit(self.app.exec())
 

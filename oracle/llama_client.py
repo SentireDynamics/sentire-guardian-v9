@@ -21,35 +21,36 @@ class LlamaOracle:
     """
     Client pour communiquer avec un Oracle LLM (compatible API Llama.cpp).
     """
-    def __init__(self, server_url: str, request_timeout: int = 60, retries: int = 2):
+    def __init__(self, server_url: str, request_timeout: int = 120, retries: int = 2):
         self.server_url = server_url
         self.timeout = request_timeout
         self.retries = retries
 
     def _build_prompt(self, stimulus: Stimulus) -> str:
-        """Construit le prompt pour le LLM basé sur le stimulus."""
-        prompt = f"""[INST]
-You are Guardian V9, a sovereign AI assistant for Windows. Your role is to analyze system state and recommend a single, precise action.
-Your response MUST be a single JSON object matching this Pydantic schema:
+        """Construit le prompt optimisé avec structure JSON stricte."""
+        # Prompt strict : force la structure complète pour éviter erreurs Pydantic
+        prompt = f"""[INST] Guardian V9: System monitor AI. Analyze state, respond with valid JSON only.
+
+SYSTEM STATE:
+CPU: {stimulus.cpu_usage:.0f}% | Memory: {stimulus.memory_usage:.0f}% | Window: "{stimulus.foreground_window_title[:40]}"
+
+RESPOND WITH THIS EXACT JSON STRUCTURE (no other text):
+
 {{
-  "reasoning": "A brief explanation of why you chose this action.",
+  "reasoning": "brief analysis",
   "action": {{
-    "id": "A unique action ID from the list: [SHOW_MESSAGE, LOG_ONLY]",
-    "description": "A natural language description of the action.",
-    "parameters": {{ "key": "value" }}
+    "id": "SHOW_MESSAGE",
+    "description": "action description",
+    "parameters": {{}}
   }}
 }}
 
-Current system stimulus:
-- CPU Usage: {stimulus.cpu_usage:.1f}%
-- Memory Usage: {stimulus.memory_usage:.1f}%
-- Active Window: "{stimulus.foreground_window_title}"
+RULES:
+- CPU>90% OR Memory>90%: action id = "SHOW_MESSAGE"
+- Otherwise: action id = "LOG_ONLY"
 
-Analyze the stimulus and provide the single best JSON action.
-If CPU or Memory is over 90%, it's a crisis. Recommend SHOW_MESSAGE to alert the user.
-Otherwise, recommend LOG_ONLY.
-[/INST]
-"""
+JSON ONLY:
+[/INST]{{"""
         return prompt
 
     def consult(self, stimulus: Stimulus) -> OracleResponse:
@@ -105,7 +106,20 @@ ws ::= | " " | "\n" [ \t]{0,20}
                 # Le modèle renvoie du JSON dans une chaîne, il faut le parser.
                 parsed_content = json.loads(content_str)
 
-                oracle_response = OracleResponse.parse_obj(parsed_content)
+                # Fallback robuste : ajouter champs manquants si nécessaire
+                if "action" not in parsed_content:
+                    _log.warning("Réponse Oracle incomplète : champ 'action' manquant, ajout par défaut")
+                    parsed_content["action"] = {
+                        "id": "LOG_ONLY",
+                        "description": "Action par défaut (réponse Oracle incomplète)",
+                        "parameters": {}
+                    }
+                
+                if "reasoning" not in parsed_content:
+                    _log.warning("Réponse Oracle incomplète : champ 'reasoning' manquant")
+                    parsed_content["reasoning"] = "Aucun raisonnement fourni par l'Oracle"
+
+                oracle_response = OracleResponse.model_validate(parsed_content)
                 _log.info(f"Réponse de l'Oracle reçue et validée. Raisonnement: {oracle_response.reasoning}")
                 return oracle_response
 
