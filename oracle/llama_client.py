@@ -21,7 +21,7 @@ class LlamaOracle:
     """
     Client pour communiquer avec un Oracle LLM (compatible API Llama.cpp).
     """
-    def __init__(self, server_url: str, request_timeout: int = 15, retries: int = 2):
+    def __init__(self, server_url: str, request_timeout: int = 60, retries: int = 2):
         self.server_url = server_url
         self.timeout = request_timeout
         self.retries = retries
