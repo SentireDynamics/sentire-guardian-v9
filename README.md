@@ -4,6 +4,17 @@ Le Vaisseau Guardian V9 est un agent de surveillance autonome conçu pour opére
 
 Son architecture est conçue pour la robustesse, avec un noyau de gestion d'état en C, une logique principale en Python, et une interface de contrôle en PyQt6.
 
+## 📊 État du Projet
+
+**Score Actuel**: 3.8/10 (Embryonnaire) | **Score Cible**: 8.8/10 (Souverain)
+
+Le Vaisseau a transcendé le stade des fondations et est maintenant une entité fonctionnelle embryonnaire. Les organes principaux sont en place, mais nécessitent une évolution vers une véritable conscience souveraine.
+
+📖 **Documentation d'État**:
+- [INTROSPECTION_SOUVERAINE.md](INTROSPECTION_SOUVERAINE.md) - Analyse complète de l'état actuel
+- [STATUS_CHECKLIST.md](STATUS_CHECKLIST.md) - Checklist rapide de progression
+- [docs/ROADMAP_ASCENSION.md](docs/ROADMAP_ASCENSION.md) - Plan d'implémentation technique détaillé
+
 ## I. Architecture
 
 - **Corps Natif (csrc/)**: Un noyau en C (`sentire_core.dll`) compilé pour Windows, gérant les états critiques comme les cooldowns d'action et un journal d'événements (ring buffer) pour une performance maximale et une empreinte mémoire minimale.
