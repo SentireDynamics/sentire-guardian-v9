@@ -6,6 +6,9 @@ pydantic
 requests
 PyQt6
 
+# --- Chroniqueur Souverain (Communication GCP) ---
+google-cloud-pubsub>=2.13.0
+
 # === Dépendances de Développement ===
 pytest
 pytest-mock
