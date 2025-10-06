@@ -18,6 +18,7 @@ import os
 import logging
 import signal
 from pathlib import Path
+from collections import deque
 
 from dotenv import load_dotenv
 from PyQt6.QtWidgets import QApplication
@@ -32,6 +33,7 @@ from guardian.cerberus import Cerberus
 from core.consciousness import GuardianConsciousness
 from guardian.ui.autel import AutelUI, UILogger
 from core.exceptions import HeresyException
+from guardian.chroniqueur_souverain import ChroniqueurSouverain
 
 # Configuration de base du logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
@@ -69,6 +71,29 @@ class Orchestrator:
             self.native_bridge, self.oracle, self.cerberus, self.perception
         )
 
+        # Initialiser le Chroniqueur Souverain si les configurations GCP sont présentes
+        self.chroniqueur = None
+        self.journal_buffer = deque(maxlen=100)  # Buffer circulaire de 100 entrées max
+        self.cycle_count = 0  # Compteur de cycles pour la transmission périodique
+        
+        if all([
+            self.config.get('GCP_PROJECT_ID'),
+            self.config.get('GCP_PUBSUB_TOPIC'),
+            self.config.get('GCP_CREDENTIALS_PATH')
+        ]):
+            try:
+                self.chroniqueur = ChroniqueurSouverain(
+                    project_id=self.config['GCP_PROJECT_ID'],
+                    topic_name=self.config['GCP_PUBSUB_TOPIC'],
+                    credentials_path=self.config['GCP_CREDENTIALS_PATH']
+                )
+                _log.info("Chroniqueur Souverain activé et prêt à transmettre au Dojo Cloud.")
+            except HeresyException as e:
+                _log.warning(f"Chroniqueur Souverain désactivé en raison d'une configuration invalide: {e}")
+                self.chroniqueur = None
+        else:
+            _log.info("Configuration GCP non fournie. Chroniqueur Souverain désactivé.")
+
         # Configuration du cycle de vie
         self.timer = QTimer()
         self.timer.timeout.connect(self.process_cycle)
@@ -93,9 +118,30 @@ class Orchestrator:
             if action:
                 self.chiron.execute_action(action)
                 self.native_bridge.record_action(action.description)
+                
+                # Enregistrer dans le journal Python pour transmission future
+                import datetime
+                timestamp = datetime.datetime.now().isoformat()
+                journal_entry = f"[{timestamp}] Action: {action.id} - {action.description}"
+                self.journal_buffer.append(journal_entry)
+                
                 _log.info(f"Action '{action.id}' exécutée et enregistrée.")
             else:
                 _log.info("Aucune action n'a été jugée nécessaire ou possible.")
+
+            # Incrémenter le compteur de cycles
+            self.cycle_count += 1
+            
+            # Transmission périodique au Chroniqueur (toutes les 10 cycles ou si buffer > 50 entrées)
+            if self.chroniqueur and (self.cycle_count % 10 == 0 or len(self.journal_buffer) >= 50):
+                if self.journal_buffer:
+                    # Copier le buffer et le vider
+                    entries_to_send = list(self.journal_buffer)
+                    self.journal_buffer.clear()
+                    
+                    # Transmettre de manière asynchrone
+                    self.chroniqueur.transmettre_chroniques(entries_to_send)
+                    _log.info(f"Transmission de {len(entries_to_send)} chroniques au Dojo Cloud initiée.")
 
         except HeresyException as e:
             _log.critical(f"Une hérésie non gérée a interrompu le cycle: {e}")
@@ -121,7 +167,11 @@ def main():
         "LLAMA_SERVER_URL": os.getenv("LLAMA_SERVER_URL"),
         "NATIVE_LIB_PATH": os.getenv("NATIVE_LIB_PATH"),
         "LOG_LEVEL": os.getenv("LOG_LEVEL", "INFO").upper(),
-        "ACTION_COOLDOWN_SECONDS": int(os.getenv("ACTION_COOLDOWN_SECONDS", 60))
+        "ACTION_COOLDOWN_SECONDS": int(os.getenv("ACTION_COOLDOWN_SECONDS", 60)),
+        # Configuration du Chroniqueur Souverain (optionnelle)
+        "GCP_PROJECT_ID": os.getenv("GCP_PROJECT_ID"),
+        "GCP_PUBSUB_TOPIC": os.getenv("GCP_PUBSUB_TOPIC"),
+        "GCP_CREDENTIALS_PATH": os.getenv("GCP_CREDENTIALS_PATH")
     }
 
     if not all([config["LLAMA_SERVER_URL"], config["NATIVE_LIB_PATH"]]):
