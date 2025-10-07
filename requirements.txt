@@ -6,6 +6,12 @@ pydantic
 requests
 PyQt6
 
+# --- Perception du GPU (Fondation Somatique) ---
+nvidia-ml-py>=11.5.0
+
+# --- Chroniqueur de Forge (Jeu de Données Sacré) ---
+pandas>=2.0.0
+
 # --- Chroniqueur Souverain (Communication GCP) ---
 google-cloud-pubsub>=2.13.0
 

@@ -18,6 +18,10 @@ class Stimulus(BaseModel):
     cpu_usage: float = Field(..., description="Utilisation actuelle du CPU en pourcentage.")
     memory_usage: float = Field(..., description="Utilisation actuelle de la mémoire en pourcentage.")
     foreground_window_title: str = Field(..., description="Titre de la fenêtre actuellement au premier plan.")
+    
+    # Fondation Somatique : Perception du GPU
+    gpu_usage: Optional[float] = Field(None, description="Utilisation du GPU en pourcentage.")
+    gpu_temp: Optional[float] = Field(None, description="Température du GPU en degrés Celsius.")
 
 class Action(BaseModel):
     """

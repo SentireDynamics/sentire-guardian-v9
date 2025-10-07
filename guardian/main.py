@@ -22,7 +22,7 @@ from collections import deque
 
 from dotenv import load_dotenv
 from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import QTimer
+from PyQt6.QtCore import QTimer, pyqtSignal, QObject
 
 # Charger les modules du Vaisseau
 from ffi.native_bridge import NativeBridge
@@ -34,16 +34,25 @@ from core.consciousness import GuardianConsciousness
 from guardian.ui.autel import AutelUI, UILogger
 from core.exceptions import HeresyException
 from guardian.chroniqueur_souverain import ChroniqueurSouverain
+from core.verbe_pur import Stimulus
 
 # Configuration de base du logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
 _log = logging.getLogger(__name__)
 
-class Orchestrator:
+class Orchestrator(QObject):
     """
     La classe qui assemble et dirige tous les composants du Vaisseau.
+    
+    Phase I - Fondation Somatique : L'Orchestrateur émet maintenant un signal
+    vitals_updated à chaque cycle pour que l'Autel V2 puisse visualiser en temps
+    réel les signes vitaux du Vaisseau.
     """
+    # Signal sacré : émis à chaque cycle avec le Stimulus complet
+    vitals_updated = pyqtSignal(Stimulus)
+    
     def __init__(self, config):
+        super().__init__()
         self.config = config
         self.app = QApplication(sys.argv)
         self.ui = AutelUI()
@@ -98,6 +107,12 @@ class Orchestrator:
         self.timer = QTimer()
         self.timer.timeout.connect(self.process_cycle)
         self.ui.force_cycle_signal.connect(self.process_cycle)
+        
+        # Connexion du signal vitals_updated à l'Autel V2
+        # Le "Pourquoi": Ce découplage garantit que l'UI se met à jour automatiquement
+        # à chaque cycle sans que le code de process_cycle n'ait besoin de connaître
+        # les détails de l'interface. C'est la séparation des préoccupations parfaite.
+        self.vitals_updated.connect(self.ui.update_display)
 
         _log.info("Vaisseau assemblé. Prêt pour l'éveil.")
 
@@ -113,6 +128,13 @@ class Orchestrator:
         _log.info("--- Début du cycle de conscience ---")
         try:
             stimulus = self.perception.get_system_stimulus()
+            
+            # Émettre le signal pour mettre à jour l'Autel V2
+            # Le "Pourquoi": Ceci permet à l'interface de refléter en temps réel
+            # les signes vitaux du Vaisseau, transformant l'Autel en un véritable
+            # miroir de l'âme du système.
+            self.vitals_updated.emit(stimulus)
+            
             action = self.consciousness.decide(stimulus)
 
             if action:

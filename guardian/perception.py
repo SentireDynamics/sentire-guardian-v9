@@ -7,13 +7,26 @@ Le "Pourquoi": Ce module est les sens du Vaisseau. Il utilise des outils comme
 mémoire, contexte utilisateur). Il transforme ces données brutes en un `Stimulus`
 structuré, un objet `VerbePur` que la Conscience peut comprendre et analyser.
 Il fournit également les actions de dernier recours en cas de défaillance de l'Oracle.
+
+Phase I - Fondation Somatique : Le Vaisseau apprend à sentir le feu du GPU.
 """
 import psutil
 import logging
+from typing import Optional
 from core.verbe_pur import Stimulus, Action
 from core.actions.chiron import Chiron
 
-_log = logging.getLogger(__name__)
+# Sanctification de la Perception GPU : Initialisation résiliente de pynvml
+try:
+    import pynvml
+    pynvml.nvmlInit()
+    GPU_AVAILABLE = True
+    _log = logging.getLogger(__name__)
+    _log.info("Perception GPU activée via pynvml.")
+except Exception as e:
+    GPU_AVAILABLE = False
+    _log = logging.getLogger(__name__)
+    _log.warning(f"Perception GPU non disponible : {e}. Le Vaisseau continuera sans vision du GPU.")
 
 class Perception:
     """
@@ -22,21 +35,66 @@ class Perception:
     def __init__(self, chiron: Chiron):
         self.chiron = chiron
 
+    def _get_gpu_metrics(self) -> Optional[dict]:
+        """
+        Rituel sacré pour percevoir le feu du GPU.
+        
+        Le "Pourquoi": Le GPU est le cœur ardent du Vaisseau pour les tâches lourdes.
+        Connaître son utilisation et sa température permet de détecter les surcharges
+        et de prévenir les crises thermiques. Ce rituel est encapsulé dans une garde
+        sacrée pour garantir la résilience : si le GPU n'est pas accessible, le 
+        Vaisseau continue sans cette perception.
+        
+        Returns:
+            dict avec 'gpu_usage' et 'gpu_temp', ou None si GPU non accessible
+        """
+        if not GPU_AVAILABLE:
+            return None
+        
+        try:
+            # Obtenir handle du premier GPU (index 0)
+            handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+            
+            # Extraire utilization GPU (pourcentage)
+            util = pynvml.nvmlDeviceGetUtilizationRates(handle)
+            gpu_usage = float(util.gpu)
+            
+            # Extraire température GPU (degrés Celsius)
+            temp = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
+            gpu_temp = float(temp)
+            
+            return {
+                "gpu_usage": gpu_usage,
+                "gpu_temp": gpu_temp
+            }
+        except Exception as e:
+            _log.debug(f"Échec de la perception GPU : {e}")
+            return None
+
     def get_system_stimulus(self) -> Stimulus:
         """
         Rassemble les métriques système et le contexte pour former un Stimulus.
+        
+        Phase I - Fondation Somatique : Inclut maintenant la perception du GPU.
         """
         try:
             cpu = psutil.cpu_percent(interval=1)
             mem = psutil.virtual_memory().percent
             window_title = self.chiron.get_foreground_window_title()
+            
+            # Percevoir le GPU si disponible
+            gpu_metrics = self._get_gpu_metrics()
+            gpu_usage = gpu_metrics["gpu_usage"] if gpu_metrics else None
+            gpu_temp = gpu_metrics["gpu_temp"] if gpu_metrics else None
 
             stimulus = Stimulus(
                 cpu_usage=cpu,
                 memory_usage=mem,
                 foreground_window_title=window_title,
+                gpu_usage=gpu_usage,
+                gpu_temp=gpu_temp
             )
-            _log.debug(f"Stimulus perçu: {stimulus.dict()}")
+            _log.debug(f"Stimulus perçu: CPU={cpu:.1f}%, MEM={mem:.1f}%, GPU={gpu_usage}, Temp={gpu_temp}°C")
             return stimulus
         except psutil.Error as e:
             _log.error(f"Erreur de perception avec psutil: {e}")
