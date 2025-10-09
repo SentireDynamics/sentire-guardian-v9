@@ -96,25 +96,16 @@ class Chiron:
     
     def show_sovereign_message(self, title: str, message: str):
         """
-        Rituel d'Affichage Souverain - La Voix du Vaisseau.
+        Rituel d'Affichage Souverain - La Voix Sage du Vaisseau.
         
-        Le "Pourquoi": Lorsque le Vaisseau doit communiquer de manière urgente avec
-        l'opérateur humain, il utilise ce rituel pour afficher une boîte de message
-        native du système d'exploitation. Sur Windows, cela utilise l'API Win32
-        MessageBoxW pour garantir la visibilité.
+        Le "Pourquoi": Au lieu d'utiliser MessageBoxW (hérésie intrusive), le Vaisseau
+        utilise maintenant le système de logging pour émettre une alerte critique. Cette
+        alerte sera capturée par l'UILogger et affichée dans la bannière d'alerte de
+        l'Autel, respectant la souveraineté de l'utilisateur sans interrompre son flux.
         """
         try:
-            if os.name == "nt":
-                # Windows: Utilise MessageBoxW de l'API Win32
-                # MB_OK | MB_ICONINFORMATION = 0x00000040
-                ctypes.windll.user32.MessageBoxW(0, message, title, 0x00000040)
-            else:
-                # Unix/Linux: Affiche dans le terminal (peut être étendu avec notify-send)
-                print(f"\n{'='*60}")
-                print(f"TITRE: {title}")
-                print(f"MESSAGE: {message}")
-                print(f"{'='*60}\n")
-                logging.info(f"Message souverain affiché: {title}")
+            # Émettre une alerte critique via le système de logging
+            logging.critical(f"VOIX SOUVERAINE - {title}: {message}")
         except Exception as e:
             logging.error(f"show_sovereign_message échoué: {e}")
     

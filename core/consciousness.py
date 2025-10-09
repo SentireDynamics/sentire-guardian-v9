@@ -30,12 +30,12 @@ class GuardianConsciousness:
 
     def decide(self, stimulus: Stimulus) -> Action | None:
         """
-        Le cycle de décision complet : peut-on agir, que faire, est-ce sûr ?
+        Le cycle de décision complet : consulter l'Oracle, valider l'action.
+        
+        Phase Zéro : Le cooldown est maintenant géré par le SDK V2 lui-même via
+        transition_cooldown_ticks. Cette méthode se concentre sur la consultation
+        de l'Oracle et la validation de Cerberus.
         """
-        if not self.native_bridge.can_act():
-            _log.debug("Décision: Cooldown actif. Aucune action ne sera entreprise.")
-            return None
-
         try:
             _log.info("Consultation de l'Oracle pour une décision...")
             oracle_response = self.oracle.consult(stimulus)

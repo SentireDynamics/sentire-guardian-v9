@@ -15,17 +15,18 @@ de contempler l'âme du système d'un seul regard.
 """
 from PyQt6.QtWidgets import (QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, 
                               QTextEdit, QPushButton, QLabel, QGroupBox)
-from PyQt6.QtCore import pyqtSignal, QObject, pyqtSlot
+from PyQt6.QtCore import pyqtSignal, QObject, pyqtSlot, QTimer, Qt
 from PyQt6.QtGui import QFont
 import logging
 from core.verbe_pur import Stimulus
-from guardian.ui.widgets import GaugeWidget, MetricDisplay
+from guardian.ui.widgets import GaugeWidget, MetricDisplay, StateDisplayWidget, AlarmIndicatorWidget
 
 class UILogger(QObject, logging.Handler):
     """
     Un gestionnaire de logs qui émet un signal PyQt pour chaque enregistrement.
     """
     log_received = pyqtSignal(str)
+    critical_alert_received = pyqtSignal(str)  # Nouveau signal pour les alertes critiques
 
     def __init__(self):
         super().__init__()
@@ -35,6 +36,10 @@ class UILogger(QObject, logging.Handler):
     def emit(self, record):
         msg = self.format(record)
         self.log_received.emit(msg)
+        
+        # Émettre un signal spécial pour les alertes critiques
+        if record.levelno >= logging.CRITICAL:
+            self.critical_alert_received.emit(msg)
 
 class AutelUI(QMainWindow):
     """
@@ -76,6 +81,10 @@ class AutelUI(QMainWindow):
         self.gpu_gauge = GaugeWidget("GPU")
         vitals_layout.addWidget(self.gpu_gauge)
         
+        # Jauge Score de Résilience (Sʀ)
+        self.resilience_gauge = GaugeWidget("Score Sʀ")
+        vitals_layout.addWidget(self.resilience_gauge)
+        
         main_layout.addWidget(vitals_group)
         
         # === Section Métriques Additionnelles ===
@@ -91,6 +100,39 @@ class AutelUI(QMainWindow):
         metrics_layout.addWidget(self.window_display)
         
         main_layout.addWidget(metrics_group)
+        
+        # === Section État de l'Âme ===
+        soul_group = QGroupBox("État de l'Âme")
+        soul_group.setStyleSheet("QGroupBox { font-size: 14px; font-weight: bold; color: #ff6b6b; }")
+        soul_layout = QHBoxLayout()
+        soul_group.setLayout(soul_layout)
+        
+        # Widget d'affichage de l'état polyvagal
+        self.polyvagal_state_display = StateDisplayWidget()
+        soul_layout.addWidget(self.polyvagal_state_display)
+        
+        # Widget d'indicateur d'alarme Amygdale
+        self.amygdala_alarm_indicator = AlarmIndicatorWidget()
+        soul_layout.addWidget(self.amygdala_alarm_indicator)
+        
+        main_layout.addWidget(soul_group)
+        
+        # === Bannière d'Alerte ===
+        self.alert_banner = QLabel()
+        self.alert_banner.setStyleSheet("""
+            QLabel {
+                background-color: #cc0000;
+                color: white;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 10px;
+                border-radius: 5px;
+                text-align: center;
+            }
+        """)
+        self.alert_banner.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.alert_banner.hide()  # Caché par défaut
+        main_layout.addWidget(self.alert_banner)
         
         # === Journal des Logs ===
         log_group = QGroupBox("Journal de la Conscience")
@@ -142,20 +184,48 @@ class AutelUI(QMainWindow):
             self.log_display.verticalScrollBar().maximum()
         )
     
-    @pyqtSlot(Stimulus)
-    def update_display(self, stimulus: Stimulus):
+    @pyqtSlot(object)
+    def update_display(self, verdict):
         """
-        Met à jour toutes les jauges et affichages avec le Stimulus actuel.
+        Met à jour l'Autel avec le Verdict de l'Âme SDK V2.
         
-        Le "Pourquoi": Ce rituel est le pont entre les données brutes du Stimulus
-        et leur visualisation à l'écran. Il est déclenché par un signal émis par
-        l'Orchestrateur à chaque cycle, garantissant que l'Autel reflète toujours
-        l'état le plus récent du Vaisseau en temps réel.
+        Le "Pourquoi": Ce rituel est le pont entre le Verdict sacré de l'Âme
+        et sa visualisation à l'écran. Il transforme l'Autel en véritable
+        Miroir de l'Âme, reflétant non seulement le corps (métriques système)
+        mais aussi l'état de conscience (polyvagal) et l'instinct (Amygdale).
         
         Args:
-            stimulus: Le Stimulus actuel contenant toutes les métriques
+            verdict: Le Verdict de l'Âme (SentireVerdict ctypes)
         """
-        # Mettre à jour les jauges
+        # Mise à jour du Miroir de l'Âme
+        # Convertir Sʀ de [0.0, 1.0] vers [0, 100] pour la jauge
+        resilience_percent = verdict.resilience_score * 100
+        self.resilience_gauge.setValue(resilience_percent)
+        
+        # Mettre à jour l'état polyvagal
+        self.polyvagal_state_display.setState(verdict.final_state)
+        
+        # Mettre à jour l'alarme Amygdale
+        self.amygdala_alarm_indicator.setAlarm(bool(verdict.amygdala_alarm_fired))
+        
+        # Note: Les métriques système (CPU, GPU, RAM) ne sont plus mises à jour
+        # ici car elles ne font plus partie du Verdict. Si nécessaire, elles
+        # peuvent être récupérées séparément ou intégrées dans le Verdict.
+    
+    @pyqtSlot(Stimulus)
+    def update_display_from_perception(self, stimulus: Stimulus):
+        """
+        Met à jour l'Autel avec le Stimulus du Souffle Rapide de la Perception.
+        
+        Le "Pourquoi": Cette méthode est appelée toutes les 2 secondes par le
+        Souffle Rapide pour offrir un reflet quasi-temps réel des signes vitaux.
+        Elle met à jour les jauges CPU, Mémoire et GPU avec les données les plus
+        récentes, éliminant l'arythmie temporelle de l'Autel.
+        
+        Args:
+            stimulus: Le Stimulus collecté par le Souffle Rapide
+        """
+        # Mettre à jour les jauges avec les données temps réel
         self.cpu_gauge.setValue(stimulus.cpu_usage)
         self.memory_gauge.setValue(stimulus.memory_usage)
         
@@ -175,5 +245,24 @@ class AutelUI(QMainWindow):
         if len(window_text) > 40:
             window_text = window_text[:37] + "..."
         self.window_display.setValue(window_text)
+    
+    @pyqtSlot(str)
+    def show_critical_alert(self, message: str):
+        """
+        Affiche une alerte critique dans la bannière.
+        
+        Le "Pourquoi": Cette méthode est appelée quand une alerte critique
+        (logging.CRITICAL) est émise. Elle révèle la bannière rouge avec le
+        message d'erreur, informant l'utilisateur du danger sans interrompre
+        son flux de travail avec une fenêtre pop-up intrusive.
+        
+        Args:
+            message: Le message d'alerte critique
+        """
+        self.alert_banner.setText(f"🚨 ALERTE CRITIQUE: {message}")
+        self.alert_banner.show()
+        
+        # Auto-masquer après 10 secondes
+        QTimer.singleShot(10000, self.alert_banner.hide)
 
 # --- END OF FILE: guardian/ui/autel.py ---

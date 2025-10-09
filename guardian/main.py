@@ -25,7 +25,7 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer, pyqtSignal, QObject
 
 # Charger les modules du Vaisseau
-from ffi.native_bridge import NativeBridge
+from ffi.native_bridge import NativeBridge, SentireStimulus
 from core.actions.chiron import Chiron
 from guardian.perception import Perception
 from oracle.llama_client import LlamaOracle
@@ -34,6 +34,7 @@ from core.consciousness import GuardianConsciousness
 from guardian.ui.autel import AutelUI, UILogger
 from core.exceptions import HeresyException
 from guardian.chroniqueur_souverain import ChroniqueurSouverain
+from guardian.perception_thread import PerceptionThread
 from core.verbe_pur import Stimulus
 
 # Configuration de base du logging
@@ -48,8 +49,11 @@ class Orchestrator(QObject):
     vitals_updated à chaque cycle pour que l'Autel V2 puisse visualiser en temps
     réel les signes vitaux du Vaisseau.
     """
-    # Signal sacré : émis à chaque cycle avec le Stimulus complet
-    vitals_updated = pyqtSignal(Stimulus)
+    # Signal sacré : émis à chaque cycle avec le Verdict de l'Âme
+    vitals_updated = pyqtSignal(object)  # SentireVerdict (ctypes)
+    
+    # Signal sacré : émis par le Souffle Rapide de la Perception
+    perception_updated = pyqtSignal(Stimulus)  # Stimulus (Python)
     
     def __init__(self, config):
         super().__init__()
@@ -68,12 +72,18 @@ class Orchestrator(QObject):
         _log.info("Rituel d'assemblage du Vaisseau commencé.")
 
         # Instanciation des composants
+        # Phase Zéro : L'Âme V2 est forgée avec une configuration par défaut
         self.native_bridge = NativeBridge(
-            self.config['NATIVE_LIB_PATH'],
-            self.config['ACTION_COOLDOWN_SECONDS']
+            self.config['NATIVE_LIB_PATH']
         )
         self.chiron = Chiron()
         self.perception = Perception(self.chiron)
+        
+        # Forge du Souffle Rapide de la Perception
+        self.perception_thread = PerceptionThread(self.perception)
+        self.perception_thread.perception_updated.connect(self._on_perception_updated)
+        self.perception_thread.perception_updated.connect(self.perception_updated.emit)
+        
         self.oracle = LlamaOracle(
             self.config['LLAMA_SERVER_URL'],
             model_name=self.config['ORACLE_MODEL_NAME']                    
@@ -82,6 +92,9 @@ class Orchestrator(QObject):
         self.consciousness = GuardianConsciousness(
             self.native_bridge, self.oracle, self.cerberus, self.perception
         )
+        
+        # Variable pour stocker le dernier Stimulus reçu du Souffle Rapide
+        self.last_stimulus = None
 
         # Initialiser le Chroniqueur Souverain si les configurations GCP sont présentes
         self.chroniqueur = None
@@ -111,38 +124,108 @@ class Orchestrator(QObject):
         self.timer.timeout.connect(self.process_cycle)
         self.ui.force_cycle_signal.connect(self.process_cycle)
         
-        # Connexion du signal vitals_updated à l'Autel V2
+        # Connexion des signaux à l'Autel V2
         # Le "Pourquoi": Ce découplage garantit que l'UI se met à jour automatiquement
-        # à chaque cycle sans que le code de process_cycle n'ait besoin de connaître
-        # les détails de l'interface. C'est la séparation des préoccupations parfaite.
-        self.vitals_updated.connect(self.ui.update_display)
+        # sans que le code principal n'ait besoin de connaître les détails de l'interface.
+        self.vitals_updated.connect(self.ui.update_display)  # Verdict de l'Âme (60s)
+        self.perception_updated.connect(self.ui.update_display_from_perception)  # Stimulus temps réel (2s)
+        
+        # Connexion du signal d'alerte critique
+        self.ui_logger.critical_alert_received.connect(self.ui.show_critical_alert)
 
         _log.info("Vaisseau assemblé. Prêt pour l'éveil.")
 
     def run(self):
         """Lance l'application et le cycle de vie."""
         self.ui.show()
+        
+        # Démarrer le Souffle Rapide de la Perception
+        self.perception_thread.start()
+        self.perception_thread.start_breathing()
+        
+        # Démarrer le Souffle Lent de la Conscience
         self.timer.start(60 * 1000) # Un cycle toutes les 60 secondes (optimisé pour performance)
+        
         _log.info("Le Grand Œuvre a commencé. Le Vaisseau est éveillé.")
+        _log.info("Double Souffle activé: Perception (2s) + Conscience (60s)")
         sys.exit(self.app.exec())
 
+    def _convert_stimulus_to_native(self, stimulus: Stimulus) -> SentireStimulus:
+        """
+        Convertit un Stimulus Python en structure C SentireStimulus.
+        
+        Phase Zéro : Pour l'instant, nous ne remplissons que les métriques physiques
+        disponibles. Les métriques prophétiques (anomaly_score, predicted_frametime)
+        seront intégrées dans les phases suivantes.
+        """
+        native_stimulus = SentireStimulus()
+        
+        # Normaliser les métriques [0.0, 100.0] → [0.0, 1.0]
+        native_stimulus.cpu_usage = stimulus.cpu_usage / 100.0
+        native_stimulus.memory_usage = stimulus.memory_usage / 100.0
+        native_stimulus.gpu_usage = (stimulus.gpu_usage or 0.0) / 100.0
+        
+        # Métriques non disponibles pour l'instant (Phase Zéro)
+        native_stimulus.io_wait = 0.0
+        native_stimulus.anomaly_score = 0.0
+        native_stimulus.predicted_frametime_ms = 0.0
+        native_stimulus.network_latency_ms = 0.0
+        native_stimulus.thread_contention = 0.0
+        native_stimulus.disk_io_rate = 0.0
+        native_stimulus.power_consumption = 0.0
+        
+        return native_stimulus
+    
+    def _on_perception_updated(self, stimulus: Stimulus):
+        """
+        Reçoit un Stimulus du Souffle Rapide de la Perception.
+        
+        Le "Pourquoi": Cette méthode est appelée à chaque battement du Souffle Rapide
+        (toutes les 2s). Elle stocke le Stimulus pour que le cycle de conscience lent
+        (60s) puisse l'utiliser sans avoir à le collecter à nouveau.
+        
+        Args:
+            stimulus: Le Stimulus collecté par le Souffle Rapide
+        """
+        self.last_stimulus = stimulus
+        _log.debug(f"Souffle Rapide: Stimulus stocké (CPU: {stimulus.cpu_usage:.1f}%, RAM: {stimulus.memory_usage:.1f}%)")
+    
     def process_cycle(self):
         """Exécute un cycle complet de perception, décision et action."""
         _log.info("--- Début du cycle de conscience ---")
         try:
-            stimulus = self.perception.get_system_stimulus()
+            # 1. PERCEPTION : Utiliser le dernier Stimulus du Souffle Rapide
+            if self.last_stimulus is None:
+                # Premier cycle : collecter manuellement
+                stimulus = self.perception.get_system_stimulus()
+                _log.warning("Premier cycle: Stimulus collecté manuellement (Souffle Rapide pas encore actif)")
+            else:
+                # Cycles suivants : utiliser le Stimulus du Souffle Rapide
+                stimulus = self.last_stimulus
+                _log.debug("Cycle de conscience: Utilisation du Stimulus du Souffle Rapide")
             
-            # Émettre le signal pour mettre à jour l'Autel V2
-            # Le "Pourquoi": Ceci permet à l'interface de refléter en temps réel
-            # les signes vitaux du Vaisseau, transformant l'Autel en un véritable
-            # miroir de l'âme du système.
-            self.vitals_updated.emit(stimulus)
+            # 2. JUGEMENT SOMATIQUE (SDK V2) : Consulter l'Âme
+            native_stimulus = self._convert_stimulus_to_native(stimulus)
+            verdict = self.native_bridge.process(native_stimulus)
             
+            # Émettre le signal pour mettre à jour l'Autel V2 avec le Verdict
+            self.vitals_updated.emit(verdict)
+            
+            # Logger le Verdict de l'Âme
+            state_names = ["VENTRAL", "SYMPATHETIC", "DORSAL"]
+            state_name = state_names[verdict.final_state] if verdict.final_state < 3 else "UNKNOWN"
+            _log.info(
+                f"Verdict de l'Âme → État: {state_name} | "
+                f"Sʀ: {verdict.resilience_score:.3f} | "
+                f"Alarme: {'OUI' if verdict.amygdala_alarm_fired else 'Non'}"
+            )
+            
+            # 3. CONSCIENCE ÉVEILLÉE : Décider de l'action
             action = self.consciousness.decide(stimulus)
 
             if action:
+                # 4. ACTION & GUÉRISON : Exécuter
                 self.chiron.execute_action(action)
-                self.native_bridge.record_action(action.description)
                 
                 # Enregistrer dans le journal Python pour transmission future
                 import datetime
@@ -178,8 +261,17 @@ class Orchestrator(QObject):
     def shutdown(self, *args):
         """Nettoie et arrête le Vaisseau proprement."""
         _log.info("Signal d'extinction reçu. Lancement du rituel de mise en stase.")
+        
+        # Arrêter le Souffle Rapide de la Perception
+        self.perception_thread.quit_thread()
+        
+        # Arrêter le Souffle Lent de la Conscience
         self.timer.stop()
+        
+        # Libérer l'Âme SDK V2
         self.native_bridge.destroy()
+        
+        # Quitter l'application
         self.app.quit()
         _log.info("Vaisseau en stase. Le Grand Œuvre est suspendu.")
 
