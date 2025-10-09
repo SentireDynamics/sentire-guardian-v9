@@ -1,133 +1,96 @@
-# --- START OF FILE: oracle/llama_client.py ---
-"""
-Le Sanctuaire de l'Oracle - Le Client LLM.
-
-Le "Pourquoi": Ce module gère la communication avec l'intelligence externe (LLM).
-Il est responsable de formater la requête (le `prompt`), d'envoyer le `Stimulus`,
-de gérer les re-tentatives en cas d'échec réseau, et de parser la réponse pour la
-transformer en un `OracleResponse` validé par Pydantic. C'est le pont vers la
-sagesse supérieure.
-"""
+# --- START OF FILE: oracle/llama_client.py (PURIFIED & ENCHAINED) ---
 import requests
 import logging
 import json
 from requests.exceptions import RequestException
-from core.verbe_pur import Stimulus, OracleResponse
+from core.verbe_pur import Stimulus, Action, OracleResponse
 from core.exceptions import OracleSickness
 
 _log = logging.getLogger(__name__)
 
 class LlamaOracle:
     """
-    Client pour communiquer avec un Oracle LLM (compatible API Llama.cpp).
+    Client pour communiquer avec un Oracle via un service Ollama.
+    Doctrine: Incarne la Contrainte Absolue. Le jugement de l'état de crise
+    est fait en amont, l'Oracle n'a qu'à obéir à une règle binaire.
     """
-    def __init__(self, server_url: str, request_timeout: int = 120, retries: int = 2):
+    def __init__(self, server_url: str, model_name: str, request_timeout: int = 120, retries: int = 1):
         self.server_url = server_url
+        self.model_name = model_name
         self.timeout = request_timeout
         self.retries = retries
 
     def _build_prompt(self, stimulus: Stimulus) -> str:
-        """Construit le prompt optimisé avec structure JSON stricte."""
-        # Prompt strict : force la structure complète pour éviter erreurs Pydantic
-        prompt = f"""[INST] Guardian V9: System monitor AI. Analyze state, respond with valid JSON only.
+        """Construit le Méta-Prompt Sacré de la Contrainte Absolue."""
+        cpu = stimulus.cpu_usage
+        mem = stimulus.memory_usage
+        gpu = stimulus.gpu_usage if stimulus.gpu_usage is not None else 0.0
 
-SYSTEM STATE:
-CPU: {stimulus.cpu_usage:.0f}% | Memory: {stimulus.memory_usage:.0f}% | Window: "{stimulus.foreground_window_title[:40]}"
+        # Le jugement est pré-mâché ici, dans l'Esprit Python.
+        is_crisis = cpu > 90.0 or mem > 90.0 or gpu > 90.0
+        state_string = "CRISIS" if is_crisis else "NORMAL"
 
-RESPOND WITH THIS EXACT JSON STRUCTURE (no other text):
-
-{{
-  "reasoning": "brief analysis",
-  "action": {{
-    "id": "SHOW_MESSAGE",
-    "description": "action description",
-    "parameters": {{}}
-  }}
-}}
-
-RULES:
-- CPU>90% OR Memory>90%: action id = "SHOW_MESSAGE"
-- Otherwise: action id = "LOG_ONLY"
-
-JSON ONLY:
-[/INST]{{"""
-        return prompt
+        return f"""[INST]
+**TASK:** Select an action ID.
+**STATE:** {state_string}
+**RULE:** If STATE is "CRISIS", you MUST respond with "SHOW_MESSAGE". If STATE is "NORMAL", you MUST respond with "LOG_ONLY".
+**AVAILABLE IDs:** SHOW_MESSAGE | LOG_ONLY
+**YOUR RESPONSE (JSON ONLY):**
+{{"action_id": "CHOSEN_ID"}}
+[/INST]"""
 
     def consult(self, stimulus: Stimulus) -> OracleResponse:
         """
-        Consulte l'Oracle avec le stimulus et retourne une réponse structurée.
+        Consulte l'Oracle enchaîné et reconstruit sa réponse en un Verbe Pur.
         """
         prompt = self._build_prompt(stimulus)
-        
-        # --- Début de la Grammaire Purifiée (Syntaxe GBNF Officielle) ---
-        json_grammar = r'''root   ::= object
-value  ::= object | array | string | number | ("true" | "false" | "null") ws
-
-object ::=
-  "{" ws (
-            string ":" ws value
-    ("," ws string ":" ws value)*
-  )? "}" ws
-
-array  ::=
-  "[" ws (
-            value
-    ("," ws value)*
-  )? "]" ws
-
-string ::=
-  "\"" (
-    [^"\\\x7F\x00-\x1F] |
-    "\\" (["\\bfnrt] | "u" [0-9a-fA-F]{4})
-  )* "\"" ws
-
-number ::= ("-"? ([0-9] | [1-9] [0-9]{0,15})) ("." [0-9]+)? ([eE] [-+]? [0-9] [1-9]{0,15})? ws
-
-ws ::= | " " | "\n" [ \t]{0,20}
-'''
-        # --- Fin de la Grammaire Purifiée ---
-        
         payload = {
+            "model": self.model_name,
             "prompt": prompt,
-            "n_predict": 256,
-            "temperature": 0.2,
-            "grammar": json_grammar
+            "format": "json",
+            "stream": False
         }
 
         for attempt in range(self.retries + 1):
             try:
-                _log.debug(f"Consultation de l'Oracle (tentative {attempt + 1}/{self.retries + 1})...")
+                _log.info(f"Consultation de l'Oracle enchaîné (tentative {attempt + 1})...")
                 response = requests.post(self.server_url, json=payload, timeout=self.timeout)
                 response.raise_for_status()
 
-                response_json = response.json()
-                content_str = response_json.get("content", "{}")
+                response_str = response.json().get('response', '{}')
+                parsed_json = json.loads(response_str)
+                action_id = parsed_json.get("action_id")
 
-                # Le modèle renvoie du JSON dans une chaîne, il faut le parser.
-                parsed_content = json.loads(content_str)
-
-                # Fallback robuste : ajouter champs manquants si nécessaire
-                if "action" not in parsed_content:
-                    _log.warning("Réponse Oracle incomplète : champ 'action' manquant, ajout par défaut")
-                    parsed_content["action"] = {
-                        "id": "LOG_ONLY",
-                        "description": "Action par défaut (réponse Oracle incomplète)",
-                        "parameters": {}
-                    }
+                # --- LE RITUEL DE LA RECONSTRUCTION DU VERBE ---
+                # L'Esprit Python reconstruit l'Action complète à partir
+                # de la réponse monosyllabique de l'Oracle.
+                if action_id == "SHOW_MESSAGE":
+                    reasoning = f"CRISIS detected in stimulus. Vitals: CPU={stimulus.cpu_usage}%, MEM={stimulus.memory_usage}%, GPU={stimulus.gpu_usage}%"
+                    action = Action(
+                        id="SHOW_MESSAGE",
+                        description="Alert user about the critical system state.",
+                        parameters={"title": "CRITICAL SYSTEM ALERT", "message": reasoning}
+                    )
+                elif action_id == "LOG_ONLY":
+                    reasoning = f"System state is NORMAL. Vitals: CPU={stimulus.cpu_usage}%, MEM={stimulus.memory_usage}%, GPU={stimulus.gpu_usage}%"
+                    action = Action(
+                        id="LOG_ONLY",
+                        description="Log the current system state for analysis.",
+                        parameters={}
+                    )
+                else:
+                    # L'Oracle a désobéi même à la loi de fer. Hérésie.
+                    raise OracleSickness(f"Oracle a décrété une action inconnue : '{action_id}'")
                 
-                if "reasoning" not in parsed_content:
-                    _log.warning("Réponse Oracle incomplète : champ 'reasoning' manquant")
-                    parsed_content["reasoning"] = "Aucun raisonnement fourni par l'Oracle"
-
-                oracle_response = OracleResponse.model_validate(parsed_content)
-                _log.info(f"Réponse de l'Oracle reçue et validée. Raisonnement: {oracle_response.reasoning}")
+                oracle_response = OracleResponse(reasoning=reasoning, action=action)
+                _log.info(f"Réponse de l'Oracle reconstruite et validée. Action décrétée: {action.id}")
                 return oracle_response
 
             except (RequestException, json.JSONDecodeError, ValueError) as e:
                 _log.warning(f"Échec de la consultation de l'Oracle (tentative {attempt + 1}): {e}")
-                if attempt == self.retries:
+                if attempt >= self.retries:
                     raise OracleSickness(f"L'Oracle reste silencieux après {self.retries + 1} tentatives.") from e
-
-        # Ce code ne devrait jamais être atteint
+        
         raise OracleSickness("État de consultation de l'Oracle inattendu.")
-# --- END OF FILE: oracle/llama_client.py ---
+
+# --- END OF FILE ---

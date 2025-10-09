@@ -74,7 +74,10 @@ class Orchestrator(QObject):
         )
         self.chiron = Chiron()
         self.perception = Perception(self.chiron)
-        self.oracle = LlamaOracle(self.config['LLAMA_SERVER_URL'])
+        self.oracle = LlamaOracle(
+            self.config['LLAMA_SERVER_URL'],
+            model_name=self.config['ORACLE_MODEL_NAME']                    
+        )
         self.cerberus = Cerberus()
         self.consciousness = GuardianConsciousness(
             self.native_bridge, self.oracle, self.cerberus, self.perception
@@ -190,6 +193,7 @@ def main():
         "NATIVE_LIB_PATH": os.getenv("NATIVE_LIB_PATH"),
         "LOG_LEVEL": os.getenv("LOG_LEVEL", "INFO").upper(),
         "ACTION_COOLDOWN_SECONDS": int(os.getenv("ACTION_COOLDOWN_SECONDS", 60)),
+        "ORACLE_MODEL_NAME": os.getenv("ORACLE_MODEL_NAME"),
         # Configuration du Chroniqueur Souverain (optionnelle)
         "GCP_PROJECT_ID": os.getenv("GCP_PROJECT_ID"),
         "GCP_PUBSUB_TOPIC": os.getenv("GCP_PUBSUB_TOPIC"),
