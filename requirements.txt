@@ -12,6 +12,9 @@ nvidia-ml-py>=11.5.0
 # --- Chroniqueur de Forge (Jeu de Données Sacré) ---
 pandas>=2.0.0
 
+# --- Miroir de l'Âme (Graphiques Temporels) ---
+pyqtgraph>=0.13.0
+
 # --- Chroniqueur Souverain (Communication GCP) ---
 google-cloud-pubsub>=2.13.0
 

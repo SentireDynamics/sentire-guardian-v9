@@ -19,8 +19,14 @@ class Cerberus:
     Valide les actions avant leur exécution.
     """
     def __init__(self):
-        # Liste blanche des actions autorisées.
-        self.allowed_actions = {"SHOW_MESSAGE", "LOG_ONLY"}
+        # Liste blanche des actions autorisées (Phase II - Actions Souveraines).
+        self.allowed_actions = {
+            "SHOW_MESSAGE",           # Dernier recours
+            "LOG_ONLY",              # Enregistrement
+            "ISOLATE_PROCESS",       # Isolation (suspend)
+            "EXCOMMUNICATE_PROCESS", # Excommunication (kill)
+            "LOWER_RIVAL_PRIORITY"   # Réduction priorité
+        }
 
     def validate_action(self, action: Action) -> bool:
         """

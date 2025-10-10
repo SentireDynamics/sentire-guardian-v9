@@ -21,23 +21,39 @@ class LlamaOracle:
         self.retries = retries
 
     def _build_prompt(self, stimulus: Stimulus) -> str:
-        """Construit le Méta-Prompt Sacré de la Contrainte Absolue."""
+        """Construit le Méta-Prompt de l'Action Souveraine (Phase II) – Doctrine de Causalité."""
         cpu = stimulus.cpu_usage
         mem = stimulus.memory_usage
         gpu = stimulus.gpu_usage if stimulus.gpu_usage is not None else 0.0
+        top_cpu_pid = stimulus.top_cpu_process_pid
+        top_cpu_name = stimulus.top_cpu_process_name or "unknown"
+        top_mem_pid = stimulus.top_mem_process_pid
+        top_mem_name = stimulus.top_mem_process_name or "unknown"
 
-        # Le jugement est pré-mâché ici, dans l'Esprit Python.
-        is_crisis = cpu > 90.0 or mem > 90.0 or gpu > 90.0
-        state_string = "CRISIS" if is_crisis else "NORMAL"
-
-        return f"""[INST]
-**TASK:** Select an action ID.
-**STATE:** {state_string}
-**RULE:** If STATE is "CRISIS", you MUST respond with "SHOW_MESSAGE". If STATE is "NORMAL", you MUST respond with "LOG_ONLY".
-**AVAILABLE IDs:** SHOW_MESSAGE | LOG_ONLY
-**YOUR RESPONSE (JSON ONLY):**
-{{"action_id": "CHOSEN_ID"}}
-[/INST]"""
+        # Méta-prompt (anglais concis pour LLM), JSON strict – Doctrine de Causalité
+        return (
+            "[INST]\n"
+            "You are the Sovereign Action Oracle of Guardian V9.\n"
+            "Decide one action to regulate system load WITHOUT popups.\n\n"
+            f"VITALS: CPU={cpu:.1f}%, MEM={mem:.1f}%, GPU={gpu:.1f}%\n"
+            f"TOP_CPU: pid={top_cpu_pid}, name='{top_cpu_name}'\n"
+            f"TOP_MEM: pid={top_mem_pid}, name='{top_mem_name}'\n\n"
+            "DOCTRINE OF CAUSALITY:\n"
+            "- If CPU > 90% and top_cpu_pid exists -> ISOLATE_PROCESS(top_cpu_pid).\n"
+            "- If MEM > 90% and top_mem_pid exists -> ISOLATE_PROCESS(top_mem_pid).\n"
+            "- If a process is clearly harmful -> EXCOMMUNICATE_PROCESS(pid).\n"
+            "- If load is high (70-90%) -> LOWER_RIVAL_PRIORITY(pid).\n"
+            "- SHOW_MESSAGE is last resort only.\n"
+            "- Otherwise -> LOG_ONLY.\n\n"
+            "AVAILABLE_ACTIONS (JSON schema):\n"
+            "- {\"action_id\": \"ISOLATE_PROCESS\", \"pid\": <int>}\n"
+            "- {\"action_id\": \"EXCOMMUNICATE_PROCESS\", \"pid\": <int>}\n"
+            "- {\"action_id\": \"LOWER_RIVAL_PRIORITY\", \"pid\": <int>}\n"
+            "- {\"action_id\": \"SHOW_MESSAGE\"}\n"
+            "- {\"action_id\": \"LOG_ONLY\"}\n\n"
+            "Respond with ONE strict JSON object only.\n"
+            "[/INST]"
+        )
 
     def consult(self, stimulus: Stimulus) -> OracleResponse:
         """
@@ -60,6 +76,7 @@ class LlamaOracle:
                 response_str = response.json().get('response', '{}')
                 parsed_json = json.loads(response_str)
                 action_id = parsed_json.get("action_id")
+                target_pid = parsed_json.get("pid")
 
                 # --- LE RITUEL DE LA RECONSTRUCTION DU VERBE ---
                 # L'Esprit Python reconstruit l'Action complète à partir
@@ -78,6 +95,18 @@ class LlamaOracle:
                         description="Log the current system state for analysis.",
                         parameters={}
                     )
+                elif action_id in ("ISOLATE_PROCESS", "EXCOMMUNICATE_PROCESS", "LOWER_RIVAL_PRIORITY"):
+                    # Paramètre PID obligatoire
+                    pid = int(target_pid or (stimulus.top_cpu_process_pid or stimulus.top_mem_process_pid or 0))
+                    if pid <= 0:
+                        raise OracleSickness("Action souveraine sans PID valide")
+                    descriptions = {
+                        "ISOLATE_PROCESS": f"Isolate (suspend) process PID={pid} to stop CPU burn.",
+                        "EXCOMMUNICATE_PROCESS": f"Kill process PID={pid} causing critical harm.",
+                        "LOWER_RIVAL_PRIORITY": f"Lower priority of process PID={pid} to reduce impact.",
+                    }
+                    action = Action(id=action_id, description=descriptions[action_id], parameters={"pid": pid})
+                    reasoning = f"Sovereign regulation applied on PID={pid}."
                 else:
                     # L'Oracle a désobéi même à la loi de fer. Hérésie.
                     raise OracleSickness(f"Oracle a décrété une action inconnue : '{action_id}'")

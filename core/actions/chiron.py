@@ -56,6 +56,56 @@ class Chiron:
             logging.info(message)
         except Exception as e:
             print(f"[Erreur] log_to_journal: {e}")
+
+    # =====================
+    # Phase II - Rituels V2
+    # =====================
+    def isolate_process(self, pid: int) -> bool:
+        """
+        Isole un processus (suspend) pour stopper immédiatement sa consommation CPU.
+        """
+        try:
+            import psutil
+            proc = psutil.Process(pid)
+            proc.suspend()
+            logging.info(f"Processus isolé (suspendu): PID={pid}")
+            return True
+        except Exception as e:
+            logging.error(f"isolate_process échoué (PID={pid}): {e}")
+            return False
+
+    def excommunicate_process(self, pid: int) -> bool:
+        """
+        Excommunie (kill) un processus identifié comme source de crise.
+        """
+        try:
+            import psutil
+            proc = psutil.Process(pid)
+            proc.kill()
+            logging.info(f"Processus excommunié (tué): PID={pid}")
+            return True
+        except Exception as e:
+            logging.error(f"excommunicate_process échoué (PID={pid}): {e}")
+            return False
+
+    def lower_rival_process_priority(self, pid: int) -> bool:
+        """
+        Abaisse la priorité d'un processus rival pour réduire son impact.
+        """
+        try:
+            import psutil
+            proc = psutil.Process(pid)
+            if os.name == "nt":
+                # Windows: BELOW_NORMAL_PRIORITY_CLASS = 0x00004000
+                BELOW_NORMAL = 0x00004000
+                ctypes.windll.kernel32.SetPriorityClass(int(proc.pid), BELOW_NORMAL)
+            else:
+                proc.nice(10)
+            logging.info(f"Priorité abaissée pour PID={pid}")
+            return True
+        except Exception as e:
+            logging.error(f"lower_rival_process_priority échoué (PID={pid}): {e}")
+            return False
     
     def execute_action(self, action):
         """
@@ -87,6 +137,18 @@ class Chiron:
                 log_message = action.parameters.get("message", action.description)
                 self.log_to_journal(f"[ACTION] {log_message}")
                 logging.info(f"Action LOG_ONLY exécutée: {log_message}")
+            
+            elif action.id == "ISOLATE_PROCESS":
+                pid = int(action.parameters.get("pid"))
+                self.isolate_process(pid)
+            
+            elif action.id == "EXCOMMUNICATE_PROCESS":
+                pid = int(action.parameters.get("pid"))
+                self.excommunicate_process(pid)
+
+            elif action.id == "LOWER_RIVAL_PRIORITY":
+                pid = int(action.parameters.get("pid"))
+                self.lower_rival_process_priority(pid)
             
             else:
                 logging.warning(f"Action non reconnue par Chiron: {action.id}")

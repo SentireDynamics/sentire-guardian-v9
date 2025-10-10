@@ -23,6 +23,12 @@ class Stimulus(BaseModel):
     gpu_usage: Optional[float] = Field(None, description="Utilisation du GPU en pourcentage.")
     gpu_temp: Optional[float] = Field(None, description="Température du GPU en degrés Celsius.")
 
+    # Phase II : Perception fine des processus gourmands
+    top_cpu_process_pid: Optional[int] = Field(None, description="PID du processus le plus consommateur de CPU.")
+    top_cpu_process_name: Optional[str] = Field(None, description="Nom du processus le plus consommateur de CPU.")
+    top_mem_process_pid: Optional[int] = Field(None, description="PID du processus consommant le plus de mémoire.")
+    top_mem_process_name: Optional[str] = Field(None, description="Nom du processus consommant le plus de mémoire.")
+
 class Action(BaseModel):
     """
     Représente une action unique et atomique que le Vaisseau peut entreprendre.

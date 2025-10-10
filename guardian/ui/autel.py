@@ -19,7 +19,7 @@ from PyQt6.QtCore import pyqtSignal, QObject, pyqtSlot, QTimer, Qt
 from PyQt6.QtGui import QFont
 import logging
 from core.verbe_pur import Stimulus
-from guardian.ui.widgets import GaugeWidget, MetricDisplay, StateDisplayWidget, AlarmIndicatorWidget
+from guardian.ui.widgets import GaugeWidget, MetricDisplay, StateDisplayWidget, AlarmIndicatorWidget, GraphWidget, ActionLogWidget
 
 class UILogger(QObject, logging.Handler):
     """
@@ -117,6 +117,10 @@ class AutelUI(QMainWindow):
         
         main_layout.addWidget(soul_group)
         
+        # === Chronique Temporelle du Sʀ ===
+        self.graph_widget = GraphWidget()
+        main_layout.addWidget(self.graph_widget)
+        
         # === Bannière d'Alerte ===
         self.alert_banner = QLabel()
         self.alert_banner.setStyleSheet("""
@@ -134,26 +138,16 @@ class AutelUI(QMainWindow):
         self.alert_banner.hide()  # Caché par défaut
         main_layout.addWidget(self.alert_banner)
         
-        # === Journal des Logs ===
-        log_group = QGroupBox("Journal de la Conscience")
-        log_group.setStyleSheet("QGroupBox { font-size: 12px; color: #00d4ff; }")
-        log_layout = QVBoxLayout()
-        log_group.setLayout(log_layout)
+        # === Chronique des Actes ===
+        actions_group = QGroupBox("Chronique des Actes")
+        actions_group.setStyleSheet("QGroupBox { font-size: 12px; color: #00d4ff; }")
+        actions_layout = QVBoxLayout()
+        actions_group.setLayout(actions_layout)
         
-        self.log_display = QTextEdit()
-        self.log_display.setReadOnly(True)
-        self.log_display.setStyleSheet("""
-            QTextEdit {
-                background-color: #2b2b2b;
-                color: #e0e0e0;
-                font-family: 'Consolas', monospace;
-                font-size: 10px;
-                border: 1px solid #444;
-            }
-        """)
-        log_layout.addWidget(self.log_display)
+        self.action_log_widget = ActionLogWidget()
+        actions_layout.addWidget(self.action_log_widget)
         
-        main_layout.addWidget(log_group, 1)  # Stretch factor 1
+        main_layout.addWidget(actions_group, 1)  # Stretch factor 1
         
         # === Bouton de Contrôle ===
         self.force_button = QPushButton("⚡ Forcer le Cycle de Conscience")
@@ -179,10 +173,9 @@ class AutelUI(QMainWindow):
 
     def add_log_message(self, message: str):
         """Ajoute un message au widget de journalisation."""
-        self.log_display.append(message)
-        self.log_display.verticalScrollBar().setValue(
-            self.log_display.verticalScrollBar().maximum()
-        )
+        # Cette méthode est conservée pour la compatibilité avec UILogger
+        # mais n'est plus utilisée car nous utilisons maintenant ActionLogWidget
+        pass
     
     @pyqtSlot(object)
     def update_display(self, verdict):
@@ -207,6 +200,9 @@ class AutelUI(QMainWindow):
         
         # Mettre à jour l'alarme Amygdale
         self.amygdala_alarm_indicator.setAlarm(bool(verdict.amygdala_alarm_fired))
+        
+        # Ajouter le point de données au graphique historique
+        self.graph_widget.add_data_point(verdict.resilience_score)
         
         # Note: Les métriques système (CPU, GPU, RAM) ne sont plus mises à jour
         # ici car elles ne font plus partie du Verdict. Si nécessaire, elles
@@ -264,5 +260,20 @@ class AutelUI(QMainWindow):
         
         # Auto-masquer après 10 secondes
         QTimer.singleShot(10000, self.alert_banner.hide)
+    
+    @pyqtSlot(object, str)
+    def display_action(self, action, timestamp: str):
+        """
+        Affiche une action dans la Chronique des Actes.
+        
+        Le "Pourquoi": Cette méthode est appelée à chaque fois qu'une action
+        est décidée et exécutée par le Vaisseau. Elle ajoute l'action à la
+        chronique avec une description en langage naturel et des icônes.
+        
+        Args:
+            action: L'action décidée par le Vaisseau
+            timestamp: Le timestamp formaté de l'action
+        """
+        self.action_log_widget.log_action(action, timestamp)
 
 # --- END OF FILE: guardian/ui/autel.py ---

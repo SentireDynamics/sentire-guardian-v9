@@ -7,10 +7,13 @@ Les GaugeWidget permettent une visualisation intuitive et élégante des métriq
 système en temps réel. Chaque jauge est un cristal qui reflète l'état vital du
 Vaisseau, permettant à l'opérateur de percevoir d'un coup d'œil la santé du système.
 """
-from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout
+from PyQt6.QtWidgets import QWidget, QLabel, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QPainter, QColor, QPen, QFont, QConicalGradient
 import math
+import pyqtgraph as pg
+from datetime import datetime
+from core.verbe_pur import Action
 
 class GaugeWidget(QWidget):
     """
@@ -293,6 +296,252 @@ class AlarmIndicatorWidget(QWidget):
             else:
                 # État éteint (rouge foncé)
                 self.alarm_circle.setStyleSheet("font-size: 24px; color: #440000;")
+
+
+class GraphWidget(QWidget):
+    """
+    Widget pour afficher l'historique temporel du Score de Résilience (Sʀ).
+    
+    Le "Pourquoi": Ce widget est le Parchemin du Temps. Il montre l'évolution
+    du Score de Résilience dans le temps, permettant à l'Architecte de voir
+    d'où vient l'âme du Vaisseau et comment elle évolue. C'est l'historique
+    des états de conscience du Vaisseau.
+    """
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setMinimumSize(400, 200)
+        
+        # Configuration du layout
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        
+        # Titre du graphique
+        self.title_label = QLabel("Chronique Temporelle du Sʀ")
+        self.title_label.setStyleSheet("font-weight: bold; color: #00d4ff; font-size: 14px;")
+        layout.addWidget(self.title_label)
+        
+        # Configuration de pyqtgraph
+        pg.setConfigOptions(antialias=True)
+        self.plot_widget = pg.PlotWidget()
+        
+        # Configuration de l'apparence
+        self.plot_widget.setBackground('#1e1e1e')  # Fond sombre
+        self.plot_widget.showGrid(x=True, y=True, alpha=0.3)  # Grille subtile
+        
+        # Configuration des axes
+        self.plot_widget.setLabel('left', 'Score Sʀ', color='#ffffff')
+        self.plot_widget.setLabel('bottom', 'Temps', color='#ffffff')
+        self.plot_widget.setYRange(0, 1)  # Score Sʀ entre 0 et 1
+        
+        # Couleurs des axes
+        self.plot_widget.getAxis('left').setPen(pg.mkPen(color='#ffffff'))
+        self.plot_widget.getAxis('bottom').setPen(pg.mkPen(color='#ffffff'))
+        
+        layout.addWidget(self.plot_widget)
+        
+        # Données pour la courbe
+        self.time_data = []
+        self.score_data = []
+        self.max_points = 100  # Garder les 100 derniers points
+        
+        # Courbe principale
+        self.curve = self.plot_widget.plot(
+            self.time_data, 
+            self.score_data, 
+            pen=pg.mkPen(color='#00d4ff', width=2),  # Couleur cyan doctrinale
+            symbol='o',
+            symbolSize=4,
+            symbolBrush='#00d4ff'
+        )
+        
+        # Ligne de référence à 0.8 (seuil VENTRAL)
+        self.ventral_line = self.plot_widget.addLine(
+            y=0.8, 
+            pen=pg.mkPen(color='#90ee90', width=1, style=Qt.PenStyle.DashLine)
+        )
+        
+        # Ligne de référence à 0.4 (seuil DORSAL)
+        self.dorsal_line = self.plot_widget.addLine(
+            y=0.4, 
+            pen=pg.mkPen(color='#ff6b6b', width=1, style=Qt.PenStyle.DashLine)
+        )
+    
+    def add_data_point(self, score: float):
+        """
+        Ajoute une nouvelle valeur à la courbe.
+        
+        Le "Pourquoi": Cette méthode est appelée à chaque cycle de conscience
+        (60s) pour ajouter le nouveau Score de Résilience à l'historique.
+        La courbe montre l'évolution de l'état de conscience du Vaisseau.
+        
+        Args:
+            score: Le Score de Résilience (Sʀ) entre 0.0 et 1.0
+        """
+        current_time = datetime.now()
+        
+        # Ajouter les nouvelles données
+        self.time_data.append(current_time)
+        self.score_data.append(score)
+        
+        # Limiter le nombre de points pour les performances
+        if len(self.time_data) > self.max_points:
+            self.time_data.pop(0)
+            self.score_data.pop(0)
+        
+        # Mettre à jour l'affichage
+        self.update_plot()
+    
+    def update_plot(self):
+        """
+        Met à jour l'affichage du graphique.
+        
+        Le "Pourquoi": Cette méthode redessine la courbe avec les nouvelles
+        données. Elle ajuste automatiquement l'échelle des axes pour que
+        toute la courbe soit visible.
+        """
+        if len(self.time_data) > 0:
+            # Convertir les timestamps en nombres pour pyqtgraph
+            time_numeric = [t.timestamp() for t in self.time_data]
+            
+            # Mettre à jour la courbe
+            self.curve.setData(time_numeric, self.score_data)
+            
+            # Ajuster l'échelle des axes
+            if len(time_numeric) > 1:
+                time_span = time_numeric[-1] - time_numeric[0]
+                self.plot_widget.setXRange(
+                    time_numeric[0] - time_span * 0.1, 
+                    time_numeric[-1] + time_span * 0.1
+                )
+
+
+class ActionLogWidget(QListWidget):
+    """
+    Widget pour afficher l'historique des actions du Vaisseau.
+    
+    Le "Pourquoi": Ce widget est la Chronique des Actes. Il montre toutes
+    les actions que le Vaisseau a décidées et exécutées, avec des descriptions
+    en langage naturel et des icônes pour une compréhension immédiate.
+    C'est l'historique des décisions et des interventions du Vaisseau.
+    """
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        
+        # Configuration de l'apparence
+        self.setStyleSheet("""
+            QListWidget {
+                background-color: #2b2b2b;
+                color: #e0e0e0;
+                font-family: 'Consolas', monospace;
+                font-size: 11px;
+                border: 1px solid #444;
+                selection-background-color: #404040;
+            }
+            QListWidget::item {
+                padding: 5px;
+                border-bottom: 1px solid #333;
+            }
+            QListWidget::item:selected {
+                background-color: #404040;
+            }
+        """)
+        
+        # Limiter le nombre d'items pour les performances
+        self.max_items = 50
+    
+    def log_action(self, action: Action, timestamp: str):
+        """
+        Ajoute une nouvelle action à la chronique.
+        
+        Le "Pourquoi": Cette méthode est appelée à chaque fois qu'une action
+        est décidée et exécutée. Elle formate l'action en langage naturel
+        avec des icônes pour une compréhension immédiate par l'Architecte.
+        
+        Args:
+            action: L'action décidée par le Vaisseau
+            timestamp: Le timestamp formaté de l'action
+        """
+        # Déterminer l'icône selon le type d'action
+        icon = self._get_action_icon(action.id)
+        
+        # Formater la description en langage naturel
+        description = self._format_action_description(action)
+        
+        # Créer le texte de l'item
+        item_text = f"{icon} [{timestamp}] {description}"
+        
+        # Créer et ajouter l'item
+        item = QListWidgetItem(item_text)
+        self.addItem(item)
+        
+        # Limiter le nombre d'items
+        if self.count() > self.max_items:
+            self.takeItem(0)  # Supprimer le plus ancien
+        
+        # Faire défiler vers le bas pour voir le nouvel item
+        self.scrollToBottom()
+    
+    def _get_action_icon(self, action_id: str) -> str:
+        """
+        Retourne l'icône appropriée selon le type d'action.
+        
+        Le "Pourquoi": Les icônes permettent une compréhension visuelle
+        immédiate de la nature de l'action sans avoir à lire le texte.
+        
+        Args:
+            action_id: L'identifiant de l'action
+            
+        Returns:
+            L'icône Unicode appropriée
+        """
+        icon_map = {
+            'SHOW_MESSAGE': '🚨',      # Alerte
+            'LOG_ONLY': '📝',          # Enregistrement
+            'KERNEL_TAP': '⚡',        # Intervention système
+            'SPIRIT_TAP': '🧠',        # Nettoyage mémoire
+            'FORCE_GC': '🗑️',         # Garbage collection
+            'RESTART_PROCESS': '🔄',   # Redémarrage
+            'KILL_PROCESS': '💀',      # Arrêt forcé
+            'CLEAR_CACHE': '🧹',       # Nettoyage cache
+            'NETWORK_FLUSH': '🌐',     # Réseau
+            'DISK_SYNC': '💾',         # Disque
+        }
+        return icon_map.get(action_id, '⚙️')  # Icône par défaut
+    
+    def _format_action_description(self, action: Action) -> str:
+        """
+        Formate la description de l'action en langage naturel.
+        
+        Le "Pourquoi": Cette méthode transforme les identifiants techniques
+        d'actions en descriptions compréhensibles par l'Architecte, utilisant
+        un langage naturel et poétique.
+        
+        Args:
+            action: L'action à formater
+            
+        Returns:
+            La description formatée en langage naturel
+        """
+        description_map = {
+            'SHOW_MESSAGE': f"Le Vaisseau a alerté l'Architecte : {action.description}",
+            'LOG_ONLY': "Le Vaisseau a gravé l'état actuel dans sa chronique",
+            'KERNEL_TAP': "Le Vaisseau a tapoté la nuque du système (sync disque, flush DNS)",
+            'SPIRIT_TAP': "Le Vaisseau a tapoté son front (nettoyage mémoire, pause contemplative)",
+            'FORCE_GC': "Le Vaisseau a purgé sa mémoire des reliques inutiles",
+            'RESTART_PROCESS': f"Le Vaisseau a redonné vie au processus : {action.description}",
+            'KILL_PROCESS': f"Le Vaisseau a mis fin au processus rebelle : {action.description}",
+            'CLEAR_CACHE': "Le Vaisseau a purifié ses caches de toute corruption",
+            'NETWORK_FLUSH': "Le Vaisseau a renouvelé ses connexions réseau",
+            'DISK_SYNC': "Le Vaisseau a scellé ses écritures sur le disque",
+        }
+        
+        # Utiliser la description personnalisée si disponible, sinon la description par défaut
+        if action.description and action.description not in description_map.values():
+            return f"Le Vaisseau a exécuté : {action.description}"
+        
+        return description_map.get(action.id, f"Le Vaisseau a accompli l'acte : {action.id}")
 
 # --- END OF FILE: guardian/ui/widgets.py ---
 

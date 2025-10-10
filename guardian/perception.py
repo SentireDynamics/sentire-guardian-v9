@@ -35,6 +35,49 @@ class Perception:
     def __init__(self, chiron: Chiron):
         self.chiron = chiron
 
+    def _get_top_processes(self) -> Optional[dict]:
+        """
+        Rituel de Perception Fine : identifie les processus les plus gourmands.
+        
+        Returns:
+            dict avec les infos top CPU/mémoire ou None en cas d'échec
+        """
+        try:
+            top_cpu_pid = None
+            top_cpu_name = None
+            top_cpu_value = -1.0
+
+            top_mem_pid = None
+            top_mem_name = None
+            top_mem_value = -1
+
+            for proc in psutil.process_iter(attrs=["pid", "name", "cpu_percent", "memory_info"]):
+                info = proc.info
+                # cpu_percent peut être 0 au premier appel; accepter la meilleure valeur vue
+                cpu_p = float(info.get("cpu_percent") or 0.0)
+                if cpu_p > top_cpu_value:
+                    top_cpu_value = cpu_p
+                    top_cpu_pid = info.get("pid")
+                    top_cpu_name = info.get("name")
+
+                mem_info = info.get("memory_info")
+                if mem_info:
+                    rss = getattr(mem_info, "rss", 0)
+                    if rss > top_mem_value:
+                        top_mem_value = rss
+                        top_mem_pid = info.get("pid")
+                        top_mem_name = info.get("name")
+
+            return {
+                "top_cpu_process_pid": top_cpu_pid,
+                "top_cpu_process_name": top_cpu_name,
+                "top_mem_process_pid": top_mem_pid,
+                "top_mem_process_name": top_mem_name,
+            }
+        except Exception as e:
+            _log.debug(f"Perception fine des processus échouée: {e}")
+            return None
+
     def _get_gpu_metrics(self) -> Optional[dict]:
         """
         Rituel sacré pour percevoir le feu du GPU.
@@ -87,12 +130,16 @@ class Perception:
             gpu_usage = gpu_metrics["gpu_usage"] if gpu_metrics else None
             gpu_temp = gpu_metrics["gpu_temp"] if gpu_metrics else None
 
+            # Perception fine des processus
+            top_procs = self._get_top_processes() or {}
+
             stimulus = Stimulus(
                 cpu_usage=cpu,
                 memory_usage=mem,
                 foreground_window_title=window_title,
                 gpu_usage=gpu_usage,
-                gpu_temp=gpu_temp
+                gpu_temp=gpu_temp,
+                **top_procs
             )
             _log.debug(f"Stimulus perçu: CPU={cpu:.1f}%, MEM={mem:.1f}%, GPU={gpu_usage}, Temp={gpu_temp}°C")
             return stimulus

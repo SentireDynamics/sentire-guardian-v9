@@ -142,10 +142,10 @@ def create_default_config() -> SentireConfig:
     config.weight_velocity_gpu = 0.2
     config.weight_velocity_io = 0.1
     
-    # Seuils Polyvagaux (Doctrine TPDU)
+    # Seuils Polyvagaux (Doctrine TPDU) - PURIFIÉS
     config.state_threshold_ventral = 0.8   # Sʀ ≥ 0.8 → VENTRAL
     config.state_threshold_dorsal = 0.4    # Sʀ < 0.4 → DORSAL
-    config.hysteresis_factor = 0.05        # Prévient le flapping
+    config.hysteresis_factor = 0.02        # CORRIGÉ: Hystérésis réduite pour éviter la zone morte
     
     # Paramètres de l'Amygdale (Voie Rapide)
     config.amygdala_threshold_cpu_velocity = 0.3     # Δ30%/sec → alarme
@@ -159,7 +159,7 @@ def create_default_config() -> SentireConfig:
     config.context_multiplier_dorsal = 1.5
     
     # Stabilité Temporelle
-    config.transition_cooldown_ticks = 3  # 3 cycles avant nouvelle transition
+    config.transition_cooldown_ticks = 1  # 1 cycle avant nouvelle transition (60s)
     
     # Mémoire
     config.journal_capacity = 1000  # 1000 entrées dans le Journal

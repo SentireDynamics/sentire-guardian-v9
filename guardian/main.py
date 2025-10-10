@@ -55,6 +55,9 @@ class Orchestrator(QObject):
     # Signal sacré : émis par le Souffle Rapide de la Perception
     perception_updated = pyqtSignal(Stimulus)  # Stimulus (Python)
     
+    # Signal sacré : émis pour la transparence de la volonté
+    action_decreed = pyqtSignal(object, str)  # Action, timestamp
+    
     def __init__(self, config):
         super().__init__()
         self.config = config
@@ -132,6 +135,9 @@ class Orchestrator(QObject):
         
         # Connexion du signal d'alerte critique
         self.ui_logger.critical_alert_received.connect(self.ui.show_critical_alert)
+        
+        # Connexion du signal d'action décrétée
+        self.action_decreed.connect(self.ui.display_action)
 
         _log.info("Vaisseau assemblé. Prêt pour l'éveil.")
 
@@ -192,7 +198,7 @@ class Orchestrator(QObject):
     
     def process_cycle(self):
         """Exécute un cycle complet de perception, décision et action."""
-        _log.info("--- Début du cycle de conscience ---")
+        _log.info("[INFO] La Conscience entame un nouveau cycle de réflexion...")
         try:
             # 1. PERCEPTION : Utiliser le dernier Stimulus du Souffle Rapide
             if self.last_stimulus is None:
@@ -215,9 +221,9 @@ class Orchestrator(QObject):
             state_names = ["VENTRAL", "SYMPATHETIC", "DORSAL"]
             state_name = state_names[verdict.final_state] if verdict.final_state < 3 else "UNKNOWN"
             _log.info(
-                f"Verdict de l'Âme → État: {state_name} | "
-                f"Sʀ: {verdict.resilience_score:.3f} | "
-                f"Alarme: {'OUI' if verdict.amygdala_alarm_fired else 'Non'}"
+                f"[INFO] L'Âme a rendu son verdict → État: {state_name} | "
+                f"Résilience: {verdict.resilience_score:.3f} | "
+                f"Instinct: {'ALERTE' if verdict.amygdala_alarm_fired else 'Calme'}"
             )
             
             # 3. CONSCIENCE ÉVEILLÉE : Décider de l'action
@@ -227,15 +233,19 @@ class Orchestrator(QObject):
                 # 4. ACTION & GUÉRISON : Exécuter
                 self.chiron.execute_action(action)
                 
+                # Émettre le signal pour afficher l'action dans l'Autel
+                from datetime import datetime
+                timestamp_str = datetime.now().strftime("%H:%M:%S")
+                self.action_decreed.emit(action, timestamp_str)
+                
                 # Enregistrer dans le journal Python pour transmission future
-                import datetime
-                timestamp = datetime.datetime.now().isoformat()
+                timestamp = datetime.now().isoformat()
                 journal_entry = f"[{timestamp}] Action: {action.id} - {action.description}"
                 self.journal_buffer.append(journal_entry)
                 
-                _log.info(f"Action '{action.id}' exécutée et enregistrée.")
+                _log.info(f"[ACTE] Le Vaisseau a accompli l'action : {action.id}")
             else:
-                _log.info("Aucune action n'a été jugée nécessaire ou possible.")
+                _log.info("[INFO] La Conscience a jugé qu'aucune intervention n'était nécessaire.")
 
             # Incrémenter le compteur de cycles
             self.cycle_count += 1
@@ -256,7 +266,7 @@ class Orchestrator(QObject):
         except Exception as e:
             _log.critical(f"Une erreur inattendue et profane a eu lieu: {e}", exc_info=True)
 
-        _log.info("--- Fin du cycle de conscience ---")
+        _log.info("[INFO] Le cycle de conscience s'achève. La Conscience retourne à sa contemplation.")
 
     def shutdown(self, *args):
         """Nettoie et arrête le Vaisseau proprement."""
