@@ -275,5 +275,42 @@ class AutelUI(QMainWindow):
             timestamp: Le timestamp formaté de l'action
         """
         self.action_log_widget.log_action(action, timestamp)
+    
+    @pyqtSlot(dict)
+    def update_vitals_display(self, state: dict):
+        """
+        Incarne la Vérité simple reçue du Souffle Rapide.
+        
+        Le "Pourquoi": Cette méthode reçoit l'état de l'Âme sous forme de dictionnaire
+        simplifié, transmis toutes les 2 secondes par le Souffle Rapide. Elle met à jour
+        le Score de Résilience, l'état polyvagal, et l'alarme de l'Amygdale en temps réel.
+        
+        Args:
+            state: Dictionnaire contenant l'état simplifié de l'Âme
+        """
+        try:
+            # Lit le score de résilience avec une protection robuste
+            resilience_score = state.get('resilience_score', 0.0)
+            if resilience_score != resilience_score:  # Protection anti-NaN
+                resilience_score = 0.0
+                _log.warning("Score SR invalide reçu par l'Autel (NaN), forcé à 0.")
+            
+            # Convertir de [0.0, 1.0] vers [0, 100] pour la jauge
+            self.resilience_gauge.setValue(int(resilience_score * 100))
+            
+            # Met à jour l'état somatique
+            somatic_state = state.get('somatic_verdict', 2)  # Défaut à DORSAL
+            self.polyvagal_state_display.setState(somatic_state)
+            
+            # Met à jour l'alarme
+            alarm_state = state.get('amygdala_alarm_state', False)
+            self.amygdala_alarm_indicator.setAlarm(alarm_state)
+            
+            # Ajouter le point de données au graphique historique
+            self.graph_widget.add_data_point(resilience_score)
+
+            _log.debug(f"Autel mis à jour: SR={resilience_score:.3f}, État={somatic_state}, Alarme={alarm_state}")
+        except Exception as e:
+            _log.error(f"Hérésie dans le Miroir de l'Âme: {e}", exc_info=True)
 
 # --- END OF FILE: guardian/ui/autel.py ---

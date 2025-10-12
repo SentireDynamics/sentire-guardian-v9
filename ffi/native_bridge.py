@@ -207,6 +207,9 @@ class NativeBridge:
                 "sentire_sdk_create returned NULL. The Soul could not be forged."
             )
         
+        # Stockage du dernier verdict pour le Souffle Rapide
+        self._last_verdict = None
+        
         _log.info("Âme Souveraine forgée avec succès. Le Vaisseau a un cœur qui bat.")
     
     def _setup_prototypes(self):
@@ -248,7 +251,19 @@ class NativeBridge:
             ctypes.byref(stimulus),
             ctypes.byref(verdict)
         )
+        # Stocker le dernier verdict pour le Souffle Rapide
+        self._last_verdict = verdict
         return verdict
+    
+    def get_last_verdict(self) -> SentireVerdict:
+        """
+        Retourne le dernier Verdict émis par l'Âme.
+        Utilisé par le Souffle Rapide pour maintenir l'Autel à jour.
+        
+        Returns:
+            Le dernier Verdict de l'Âme, ou None si aucun verdict n'a encore été émis
+        """
+        return self._last_verdict
     
     def get_version(self) -> str:
         """Retourne la version du SDK."""

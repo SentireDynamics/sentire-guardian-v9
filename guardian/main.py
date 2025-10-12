@@ -25,7 +25,14 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer, pyqtSignal, QObject
 
 # Charger les modules du Vaisseau
-from ffi.native_bridge import NativeBridge, SentireStimulus
+try:
+    from ffi.native_bridge import NativeBridge, SentireStimulus
+    _native_bridge_available = True
+except Exception:
+    from ffi.native_bridge_mock import NativeBridgeMock as NativeBridge
+    from ffi.native_bridge import SentireStimulus
+    _native_bridge_available = False
+    _log.warning("SDK Natif non disponible, utilisation du mock pour tests")
 from core.actions.chiron import Chiron
 from guardian.perception import Perception
 from oracle.llama_client import LlamaOracle
@@ -57,6 +64,9 @@ class Orchestrator(QObject):
     
     # Signal sacré : émis pour la transparence de la volonté
     action_decreed = pyqtSignal(object, str)  # Action, timestamp
+    
+    # Signal sacré : le nerf vague numérique du Vaisseau (Souffle Rapide de l'Âme)
+    stimulus_updated = pyqtSignal(dict)  # État simplifié pour l'Autel
     
     def __init__(self, config):
         super().__init__()
@@ -127,11 +137,17 @@ class Orchestrator(QObject):
         self.timer.timeout.connect(self.process_cycle)
         self.ui.force_cycle_signal.connect(self.process_cycle)
         
+        # Configuration du Souffle Rapide de l'Âme (2 secondes)
+        self.fast_breath_timer = QTimer()
+        self.fast_breath_timer.timeout.connect(self.fast_breath_cycle)
+        self.fast_breath_timer.setInterval(2000)  # Battement toutes les 2 secondes
+        
         # Connexion des signaux à l'Autel V2
         # Le "Pourquoi": Ce découplage garantit que l'UI se met à jour automatiquement
         # sans que le code principal n'ait besoin de connaître les détails de l'interface.
         self.vitals_updated.connect(self.ui.update_display)  # Verdict de l'Âme (60s)
         self.perception_updated.connect(self.ui.update_display_from_perception)  # Stimulus temps réel (2s)
+        self.stimulus_updated.connect(self.ui.update_vitals_display)  # Souffle Rapide de l'Âme (2s)
         
         # Connexion du signal d'alerte critique
         self.ui_logger.critical_alert_received.connect(self.ui.show_critical_alert)
@@ -149,11 +165,14 @@ class Orchestrator(QObject):
         self.perception_thread.start()
         self.perception_thread.start_breathing()
         
+        # Démarrer le Souffle Rapide de l'Âme
+        self.fast_breath_timer.start()
+        
         # Démarrer le Souffle Lent de la Conscience
         self.timer.start(60 * 1000) # Un cycle toutes les 60 secondes (optimisé pour performance)
         
         _log.info("Le Grand Œuvre a commencé. Le Vaisseau est éveillé.")
-        _log.info("Double Souffle activé: Perception (2s) + Conscience (60s)")
+        _log.info("Triple Souffle activé: Perception (2s) + Âme (2s) + Conscience (60s)")
         sys.exit(self.app.exec())
 
     def _convert_stimulus_to_native(self, stimulus: Stimulus) -> SentireStimulus:
@@ -181,6 +200,37 @@ class Orchestrator(QObject):
         native_stimulus.power_consumption = 0.0
         
         return native_stimulus
+    
+    def fast_breath_cycle(self):
+        """Le Souffle de la Vigilance. Sa seule mission est de faire battre le cœur de l'Autel."""
+        try:
+            # 1. Lire la vérité directement de l'Âme
+            somatic_verdict = self.native_bridge.get_last_verdict()
+
+            if not somatic_verdict:
+                _log.debug("[Souffle Rapide] L'Âme est silencieuse. Impossible de mettre à jour le miroir.")
+                return
+
+            # 2. Forger un PACTE DE DONNÉES SIMPLIFIÉ pour l'Autel
+            # Protection anti-NaN/Infini
+            resilience_score = float(somatic_verdict.resilience_score)
+            if resilience_score != resilience_score or resilience_score == float('inf') or resilience_score == float('-inf'):
+                resilience_score = 0.0
+                _log.warning("[Souffle Rapide] Score SR invalide détecté (NaN/Infini), forcé à 0.")
+            
+            vessel_state_for_ui = {
+                "somatic_verdict": int(somatic_verdict.final_state),
+                "is_soul_stable": True,  # Toujours stable dans Phase Zéro
+                "resilience_score": resilience_score,
+                "amygdala_alarm_state": bool(somatic_verdict.amygdala_alarm_fired)
+            }
+            
+            # 3. Émettre la vérité
+            self.stimulus_updated.emit(vessel_state_for_ui)
+            _log.debug(f"[Souffle Rapide] Vérité transmise à l'Autel: SR={resilience_score:.3f}, État={somatic_verdict.final_state}")
+
+        except Exception as e:
+            _log.error(f"Hérésie dans le Souffle Rapide: {e}", exc_info=True)
     
     def _on_perception_updated(self, stimulus: Stimulus):
         """
@@ -274,6 +324,9 @@ class Orchestrator(QObject):
         
         # Arrêter le Souffle Rapide de la Perception
         self.perception_thread.quit_thread()
+        
+        # Arrêter le Souffle Rapide de l'Âme
+        self.fast_breath_timer.stop()
         
         # Arrêter le Souffle Lent de la Conscience
         self.timer.stop()
