@@ -1,48 +1,48 @@
 # --- START OF FILE: core/verbe_pur.py ---
 """
-Le Sanctuaire du Verbe Pur.
+Le Sanctuaire du Verbe Pur - Perception Graduée.
 
 Le "Pourquoi": Ce module définit les structures de données fondamentales du Vaisseau
 en utilisant Pydantic. Il agit comme un contrat, garantissant que les données qui
 circulent entre les différents composants (Perception, Conscience, Oracle) sont
 toujours valides, structurées et explicites. C'est le langage commun du Grand Œuvre.
+
+Doctrine de la Perception Graduée : 
+- SoulVitals : Le sentiment interne de l'Âme (SDK C)
+- ContextualResonance : La réalité externe perçue par les senseurs
+- Stimulus : La fusion harmonieuse du sentiment et de la réalité
 """
+from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field
-from typing import List, Optional
 
-class Stimulus(BaseModel):
-    """
-    Représente les informations brutes perçues par le Vaisseau sur son environnement.
-    C'est l'étincelle qui initie le cycle de réflexion.
-    """
-    cpu_usage: float = Field(..., description="Utilisation actuelle du CPU en pourcentage.")
-    memory_usage: float = Field(..., description="Utilisation actuelle de la mémoire en pourcentage.")
-    foreground_window_title: str = Field(..., description="Titre de la fenêtre actuellement au premier plan.")
-    
-    # Fondation Somatique : Perception du GPU
-    gpu_usage: Optional[float] = Field(None, description="Utilisation du GPU en pourcentage.")
-    gpu_temp: Optional[float] = Field(None, description="Température du GPU en degrés Celsius.")
-
-    # Phase II : Perception fine des processus gourmands
-    top_cpu_process_pid: Optional[int] = Field(None, description="PID du processus le plus consommateur de CPU.")
-    top_cpu_process_name: Optional[str] = Field(None, description="Nom du processus le plus consommateur de CPU.")
-    top_mem_process_pid: Optional[int] = Field(None, description="PID du processus consommant le plus de mémoire.")
-    top_mem_process_name: Optional[str] = Field(None, description="Nom du processus consommant le plus de mémoire.")
+# --- Structures pour l'Action et le Jugement ---
 
 class Action(BaseModel):
-    """
-    Représente une action unique et atomique que le Vaisseau peut entreprendre.
-    C'est la matérialisation de la volonté.
-    """
-    id: str = Field(..., description="Un identifiant unique pour l'action, ex: 'LOG_WARNING', 'SHOW_MESSAGE'.")
-    description: str = Field(..., description="Description en langage naturel de ce que fait l'action.")
-    parameters: Optional[dict] = Field(default_factory=dict, description="Paramètres nécessaires à l'exécution de l'action.")
+    """L'acte de la Volonté."""
+    id: str = Field(..., description="The single, precise action to take. E.g., 'RESTART_SELF', 'NO_ACTION'.")
+    parameters: Dict[str, Any] = Field({}, description="Parameters for the action.")
 
-class OracleResponse(BaseModel):
-    """
-    Représente la réponse structurée de l'Oracle à une sollicitation.
-    C'est le conseil divin, la stratégie à adopter.
-    """
-    reasoning: str = Field(..., description="Explication de l'Oracle sur le choix de l'action.")
-    action: Action = Field(..., description="L'action recommandée à entreprendre.")
+class OracleJudgement(BaseModel):
+    """La Sagesse de l'Oracle : la pensée puis l'acte."""
+    reasoning: str = Field(..., description="A step-by-step analysis of the situation, confronting Soul Vitals with Contextual Resonance through the lens of TPDU.")
+    decree: Action = Field(..., description="The final, justified action decreed by the analysis.")
+
+# --- Structures pour la Perception Graduée ---
+
+class SoulVitals(BaseModel):
+    """L'état interne de l'Âme (le SDK C). Le sentiment pur."""
+    somatic_state: int = Field(..., description="Le Verdict Somatique de l'Âme: 0:VENTRAL, 1:SYMPATHETIC, 2:DORSAL")
+    resilience_score: float = Field(..., description="Score de Résilience [0.0, 1.0]")
+    time_in_state_ms: int = Field(..., description="Temps passé dans l'état actuel")
+
+class ContextualResonance(BaseModel):
+    """La réalité externe telle que perçue par un senseur. Le contexte objectif."""
+    sensor_id: str = Field(..., description="Identifier of the sensor providing the context")
+    metrics: Dict[str, float | int | str] = Field(..., description="Quantitative metrics from the external world")
+
+class Stimulus(BaseModel):
+    """Le tableau de situation complet. La fusion du sentiment et de la réalité."""
+    timestamp_utc: str
+    soul_vitals: SoulVitals
+    contextual_resonance: Optional[List[ContextualResonance]] = Field(None, description="A list of observations from all active sensors for this cycle.")
 # --- END OF FILE: core/verbe_pur.py ---

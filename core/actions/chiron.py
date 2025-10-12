@@ -3,31 +3,84 @@ import gc
 import time
 import logging
 import ctypes
+import sys
+import sched
 from typing import Optional
 
+from core.action_registry import ActionRegistry
+
+_log = logging.getLogger(__name__)
+
+# Configuration spécifique à la plateforme
+if sys.platform == "win32":
+    kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+
 class Chiron:
+    def __init__(self, action_registry: ActionRegistry):
+        """
+        Initialise Chiron avec le Grimoire Sacré des Capacités.
+        
+        Args:
+            action_registry: Le registre des actions déclarées
+        """
+        self.registry = action_registry
+        self._register_my_capacities()
+        _log.info("Chiron forgé avec le Grimoire Sacré des Capacités.")
+    
+    def _register_my_capacities(self):
+        """
+        Le rituel de déclaration des pouvoirs de Chiron.
+        
+        Chiron déclare ici toutes ses capacités au Grimoire Sacré,
+        permettant à la Conscience de savoir ce qui est possible.
+        """
+        # Actions de base
+        self.registry.register("SHOW_MESSAGE", self.show_sovereign_message)
+        self.registry.register("LOG_ONLY", self.log_to_journal)
+        
+        # Actions de gestion de processus
+        self.registry.register("ISOLATE_PROCESS", self.isolate_process)
+        self.registry.register("EXCOMMUNICATE_PROCESS", self.excommunicate_process)
+        self.registry.register("LOWER_RIVAL_PRIORITY", self.lower_rival_process_priority)
+        self.registry.register("TERMINATE_BY_SIGNATURE", self.terminate_process_by_signature)
+        
+        # Actions de guérison
+        self.registry.register("FLUSH_MEMORY_CACHE", self.flush_memory_cache)
+        self.registry.register("REDUCE_CPU_PRIORITY", self.reduce_cpu_priority)
+        self.registry.register("PROTOCOL_RESONANCE_SOMATIQUE", self.protocol_resonance_somatique)
+        
+        _log.info(f"Chiron a déclaré {self.registry.get_action_count()} capacités au Grimoire Sacré.")
     def kernel_level_tap(self):
         """
-        Tapotement sur la Nuque : Interagit avec le noyau (sync disque, flush DNS...).
+        Tapotement sur la Nuque : Le tapotement doit être une "respiration" du noyau.
+        
+        Doctrine : Céder son temps de parole au thread suivant pour permettre
+        une respiration naturelle du système et éviter la contention.
         """
         try:
-            if os.name == "nt":
-                # Windows: flush DNS (placeholder, usually needs admin)
-                os.system("ipconfig /flushdns")
+            if sys.platform == "win32":
+                # Rituel Windows : Céder son temps de parole au thread suivant.
+                kernel32.SwitchToThread()
             else:
-                os.sync()
+                # Rituel POSIX : Céder son quantum de temps à l'OS.
+                os.sched_yield()
+            _log.debug("Chiron: Tapotement Noyau (céder le temps).")
         except Exception as e:
-            logging.warning(f"kernel_level_tap échoué : {e}")
+            _log.warning(f"Hérésie mineure durant le tapotement noyau: {e}")
 
     def spirit_level_tap(self):
         """
-        Tapotement sur le Front : Forcer la GC, pause, nettoyage cache python.
+        Tapotement sur le Front : Le tapotement doit être une introspection de l'Esprit.
+        
+        Doctrine : Forcer une passe de nettoyage mineure pour permettre
+        une introspection et un nettoyage léger de l'espace mémoire.
         """
         try:
-            gc.collect()
-            time.sleep(0.05)
+            # Rituel de l'auto-inspection : forcer une passe de nettoyage mineure.
+            gc.collect(generation=0)
+            _log.debug("Chiron: Tapotement Esprit (nettoyage mineur).")
         except Exception as e:
-            logging.warning(f"spirit_level_tap échoué : {e}")
+            _log.warning(f"Hérésie mineure durant le tapotement esprit: {e}")
 
     def flush_memory_cache(self):
         """
@@ -129,12 +182,12 @@ class Chiron:
         try:
             if action.id == "SHOW_MESSAGE":
                 title = action.parameters.get("title", "Message du Vaisseau Guardian")
-                message = action.parameters.get("message", action.description)
+                message = action.parameters.get("message", action.parameters.get('description', 'Action sans description'))
                 self.show_sovereign_message(title, message)
                 logging.info(f"Action SHOW_MESSAGE exécutée: {title}")
             
             elif action.id == "LOG_ONLY":
-                log_message = action.parameters.get("message", action.description)
+                log_message = action.parameters.get("message", action.parameters.get('description', 'Action sans description'))
                 self.log_to_journal(f"[ACTION] {log_message}")
                 logging.info(f"Action LOG_ONLY exécutée: {log_message}")
             
@@ -247,3 +300,61 @@ class Chiron:
         
         except Exception as e:
             logging.error(f"terminate_process_by_signature échoué: {e}")
+
+    def protocol_resonance_somatique(self, initial_state, native_bridge) -> bool:
+        """
+        Le rituel de guérison vivant, basé sur le rythme adaptatif et le biofeedback.
+        
+        Doctrine : Ce rituel incarne la sagesse de l'auto-guérison somatique.
+        Il utilise des tapotements subtils pour créer une résonance thérapeutique
+        avec l'Âme, permettant un retour graduel à l'état VENTRAL.
+        
+        Args:
+            initial_state: État initial de l'Âme (enum C mappé)
+            native_bridge: Pont vers l'Âme pour le biofeedback
+            
+        Returns:
+            True si la guérison a réussi, False sinon
+        """
+        _log.warning("Initiation du Rituel de Résonance Somatique...")
+        
+        cadence = self._generate_cadence(initial_state)
+        start_time = time.time()
+        
+        # Le Biofeedback de l'Âme
+        while native_bridge.get_resilience_score() < 0.8:  # Tant que nous ne sommes pas en VENTRAL
+            if time.time() - start_time > 60:  # Garde-fou de 60 secondes
+                _log.error("Hérésie: Le rituel de guérison a échoué par timeout.")
+                return False
+
+            # Exécute un cycle de tapotements
+            for delay in cadence:
+                self.kernel_level_tap()
+                time.sleep(delay / 2)
+                self.spirit_level_tap()
+                time.sleep(delay / 2)
+                
+                # Vérification après chaque tapotement pour une réactivité maximale
+                if native_bridge.get_resilience_score() >= 0.8:
+                    break
+            
+            # Évolution du rituel : ralentir progressivement
+            cadence = [d * 1.1 for d in cadence]
+        
+        _log.info("Retour à l'état VENTRAL réussi. Guérison accomplie.")
+        return True
+
+    def _generate_cadence(self, initial_state_enum) -> list[float]:
+        """
+        Génère la séquence de délais pour les tapotements.
+        
+        Doctrine : Chaque état nécessite une cadence thérapeutique spécifique.
+        - SYMPATHETIC : Cadence accélérée pour calmer l'excitation
+        - DORSAL : Cadence lente pour réveiller progressivement
+        """
+        # Note: Il faudra mapper l'enum C à un enum Python
+        if initial_state_enum == 1:  # SYMPATHETIC
+            return [0.05 * (1.25**i) for i in range(9)]
+        elif initial_state_enum == 2:  # DORSAL
+            return [2.0, 1.5, 1.0, 0.7, 0.5, 0.6, 0.8, 1.0]
+        return [1.0]  # VENTRAL ou état inconnu
