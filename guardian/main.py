@@ -26,7 +26,14 @@ from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import pyqtSignal, QObject
 
 # Charger les modules du Vaisseau
-from ffi.native_bridge import NativeBridge, SentireStimulus
+try:
+    from ffi.native_bridge import NativeBridge, SentireStimulus
+    _native_bridge_available = True
+except Exception:
+    from ffi.native_bridge_mock import NativeBridgeMock as NativeBridge
+    from ffi.native_bridge import SentireStimulus
+    _native_bridge_available = False
+    _log.warning("SDK Natif non disponible, utilisation du mock pour tests")
 from core.actions.chiron import Chiron
 from core.soul_vitals import SoulVitals, SystemState, SystemGauges, HardwareMetrics
 from core.doctrines import SovereignVesselState, SomaticVerdict

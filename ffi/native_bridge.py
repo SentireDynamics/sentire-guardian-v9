@@ -232,6 +232,9 @@ class NativeBridge:
                 "sentire_sdk_create returned NULL. The Soul could not be forged."
             )
         
+        # Stockage du dernier verdict pour le Souffle Rapide
+        self._last_verdict = None
+        
         _log.info("Âme Souveraine forgée avec succès. Le Vaisseau a un cœur qui bat.")
     
     def _setup_prototypes(self):
@@ -317,6 +320,8 @@ class NativeBridge:
             ctypes.byref(stimulus),
             ctypes.byref(verdict)
         )
+        # Stocker le dernier verdict pour le Souffle Rapide
+        self._last_verdict = verdict
         return verdict
     
     def process_from_pydantic(self, stimulus_pydantic) -> SentireVerdict:
