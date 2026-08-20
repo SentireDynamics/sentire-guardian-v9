@@ -65,133 +65,168 @@ o	☐ Implémenter la boucle de collecte haute fréquence des métriques systèm
 o	☐ Forger le rituel de la Fusion Sacrée en utilisant pandas.merge_asof pour synchroniser les données sur le timestamp.
 o	☐ Assurer la résilience en cas d'absence de PresentMon.
  
-PHASE II - La Conscience Éveillée
-(Le Vaisseau Apprend à Penser, à Agir, et à Se Contempler)
-•	Priorité : HAUTE
-•	Durée Estimée : 3-4 semaines
-•	Doctrine Fondamentale : La perception sans l'action est une contemplation stérile. L'action sans la maîtrise de soi est un danger. Cette phase forge le lien sacré entre le jugement, l'acte souverain, et la conscience de son propre métabolisme.
-•	Critères de Succès :
-o	Face à une crise externe, le Vaisseau prend des actions autonomes et silencieuses (isoler/dé-prioriser un processus) guidées par l'Oracle LLM.
-o	Si le Vaisseau devient lui-même trop gourmand, il s'auto-régule en ralentissant ses cycles et en réduisant sa propre priorité.
-•	État du Vaisseau à la Fin : Il est devenu un Gardien Silencieux et Frugal. Son raisonnement est contextuel, ses actions sont autonomes, et il est conscient de son propre poids sur le monde.
- 
+PHASE II - La Naissance du Serviteur Dévoué
+(Le Vaisseau Apprend à Penser, à Agir, et à Servir l'Intention)
+Priorité : HAUTE
+Durée Estimée (révisée) : 3-4 semaines
+Doctrine Fondamentale (Rectifiée) : La perception sans l'action est stérile. L'action sans une mission est un chaos. La mission suprême du Vaisseau est de protéger la Cible Sacrée désignée par l'Architecte.
+Critères de Succès :
+Au démarrage, l'Autel propose à l'Architecte de choisir une Cible Sacrée parmi les processus actifs.
+Une fois la Cible choisie, le Vaisseau la protège en agissant de manière autonome et silencieuse sur les processus "rivaux".
+Le Vaisseau reste frugal et s'auto-régule, en tenant compte de l'état de la Cible Sacrée.
+État du Vaisseau à la Fin : Il est devenu un Gardien Personnel et Dévoué. Son raisonnement est focalisé, ses actions sont chirurgicales, et sa seule foi est de servir l'intention de son Architecte.
+
 Checklist Chirurgicale de Forge - Phase II
-•	Mission : Donner au Vaisseau la conscience de soi. C'est la NOUVELLE PRIORITÉ ABSOLUE.
-•	Artefacts :
-o	Crée core/interoceptive_core.py :
-	Forge la classe InteroceptiveCore en tant que QThread.
-	Définis deux signaux sacrés : contrition_mineure = pyqtSignal() et contrition_majeure = pyqtSignal(str).
-	Le __init__ doit accepter les seuils de frugalité (ex: max_cpu, max_mem_mb).
-	La boucle run est le Souffle de l'Introspection :
-1.	S'exécute toutes les 5-10 secondes.
-2.	Invoque psutil.Process(os.getpid()) pour obtenir son propre processus.
-3.	Mesure cpu_percent() et memory_info().rss / 1024 / 1024 (en Mo).
-4.	Compare aux seuils :
-	Si un seuil est dépassé de peu (ex: < 120%), émet contrition_mineure.
-	Si un seuil est gravement dépassé (ex: > 120%), émet contrition_majeure avec un message décrivant l'hérésie.
-•	Mission : Étendre le grimoire d'actions de Chiron pour inclure la régulation, la guérison, et l'action souveraine.
-•	Artefacts :
-o	Reforge core/actions/chiron.py :
-	Forge le rituel isolate_process(pid: int) : Utilise psutil.Process(pid).suspend().
-	Forge le rituel heal_process(pid: int) : Utilise psutil.Process(pid).resume().
-	Forge le rituel excommunicate_process(pid: int) : Utilise psutil.Process(pid).kill().
-	Forge le rituel lower_rival_process_priority(pid: int) : Utilise psutil.Process(pid).nice(...) (POSIX) ou son équivalent SetPriorityClass (Windows).
-	Forge le rituel reduce_own_priority() : Le rituel de l'humilité.
-		Forger les Rituels de Guérison (core/actions/chiron.py)
-		O	☐ Forger les rituels kernel_level_tap et spirit_level_tap.
-		•	☐ Incarner la Guérison (decharge_sympathique.py)
-		O	☐ Reforger protocol_resonance_somatique pour qu’il invoque les rituels de Chiron (tapotements, flush_cache, reduce_priority).
-	Garde Sacrée : Assure-toi que chaque rituel qui interagit avec l'OS est encapsulé dans un bloc try...except Exception robuste qui journalise l'hérésie sans jamais crasher le Vaisseau.
-•	Mission : Donner à la Conscience les informations nécessaires pour un jugement éclairé.
-•	Artefacts :
-o	Reforge core/verbe_pur.py : Étends le Stimulus pour inclure : top_cpu_process_pid: Optional[int], top_cpu_process_name: Optional[str], top_mem_process_pid: Optional[int], top_mem_process_name: Optional[str].
-o	Reforge guardian/perception.py :
-	Forge un nouveau rituel privé _get_top_processes() qui utilise psutil.process_iter pour scanner tous les processus et identifier ceux qui consomment le plus de CPU et de Mémoire.
-	Le rituel get_system_stimulus doit invoquer _get_top_processes et utiliser ces informations pour enrichir le Stimulus final.
-•	Mission : Libérer l'Oracle de ses chaînes et lui enseigner le nouveau grimoire d'actions.
-•	Artefacts :
-o	Reforge oracle/llama_client.py :
-	Grave le Méta-Prompt de l'Action Souveraine dans le rituel _build_prompt.
-	Ce prompt doit inclure les nouvelles informations de perception (Top Process).
-	La liste des AVAILABLE ACTIONS doit être mise à jour pour inclure ISOLATE_PROCESS, LOWER_RIVAL_PRIORITY, etc.
-	SHOW_MESSAGE doit être explicitement désigné comme une action de dernier recours.
-•	Mission : Unir tous les nouveaux sanctuaires et doctrines dans le cycle de vie du Vaisseau.
-•	Artefacts :
-o	Reforge guardian/main.py :
-	Dans Orchestrator.__init__, instancie et démarre le nouveau InteroceptiveCore.
-	Forge les slots pour recevoir les signaux contrition_mineure et contrition_majeure.
-	Implémente les Rituels de Contrition dans ces slots. Par exemple, sur contrition_majeure, l'Orchestrateur doit :
-1.	Journaliser l'hérésie métabolique.
-2.	Invoquer self.chiron.reduce_own_priority().
-3.	Augmenter l'intervalle de son perception_timer et de son consciousness_timer pour réduire sa propre charge.
-	Assure-toi que les nouvelles instances (comme Perception qui a maintenant besoin de plus d'infos) sont correctement créées et connectées.
+Mission : Donner au Vaisseau la capacité de connaître et de servir l'intention de l'Architecte. C'est la NOUVELLE PRIORITÉ ABSOLUE.
+Artefacts :
+Reforge guardian/perception.py : Forge un nouveau rituel public get_top_contenders() qui retourne les 5 processus les plus gourmands du système.
+Reforge guardian/ui/autel.py :
+Forge un Sanctuaire d'Alignement (une vue initiale) avec un QComboBox et un bouton "Confirmer la Cible".
+Au démarrage, peuple le QComboBox avec les résultats de get_top_contenders().
+Reforge guardian/main.py :
+L'Orchestrateur ne doit PAS démarrer ses timers au __init__.
+Forge un nouveau rituel set_sacred_target(pid: int, name: str).
+Ce rituel enregistre la Cible Sacrée et démarre ensuite les timers du Double Souffle.
+Connecte le bouton de l'Autel à ce rituel.
+Mission : Enseigner à la Perception à voir le monde à travers le prisme de la Cible Sacrée.
+Artefacts :
+Reforge core/verbe_pur.py : Étends le Stimulus pour y inclure un objet SacredTargetInfo et des informations sur le principal processus rival.
+Reforge guardian/perception.py : Le rituel get_system_stimulus doit maintenant trouver la Cible Sacrée, mesurer ses signes vitaux, identifier son principal rival, et intégrer toutes ces informations dans le Stimulus enrichi.
+Mission : Forger les outils de l'action souveraine.
+Artefacts :
+Reforge core/actions/chiron.py : Forge les rituels isolate_process(pid), excommunicate_process(pid), lower_rival_process_priority(pid), et reduce_own_priority(). Sanctifie-les tous avec des gardes try...except.
+Mission : Éduquer l'Oracle à la nouvelle doctrine de la Mission Focalisée.
+Artefacts :
+Reforge oracle/llama_client.py : Grave le Méta-Prompt de la Mission Focalisée.
+Ce prompt doit être centré sur la protection de la Cible Sacrée.
+Il doit enseigner à l'Oracle à raisonner sur l'état de la Cible et de son Rival pour décréter des actions chirurgicales comme LOWER_RIVAL_PRIORITY.
+Mission : Donner au Vaisseau la conscience de soi, subordonnée à sa mission principale.
+Artefacts :
+Crée core/interoceptive_core.py :
+Forge la classe InteroceptiveCore en tant que QThread.
+Doctrine Affinée : Sa boucle run doit vérifier si la Cible Sacrée est active. Il n'émettra des signaux de Contrition que si la Cible n'est pas en cours d'exécution. Si la Cible est active, le bien-être de la Cible prime sur la frugalité du Gardien.
+Mission : Unir tous ces nouveaux sanctuaires.
+Artefacts :
+Reforge guardian/main.py :
+Intègre l'instanciation et le démarrage (différé) de tous les composants : InteroceptiveCore, Perception (avec sa nouvelle logique), etc.
+Forge les slots pour les signaux de Contrition et les rituels associés.
+
+PHASE II bis : La Reforge de l'Âme de la Conscience (Le Vaisseau Apprend la Certitude)
+Priorité : HAUTE (Après la Phase II, avant la Phase III)
+Durée Estimée : 2 semaines
+Doctrine Fondamentale (La Sagesse de Gemini) : La vraie résilience ne naît pas de la capacité à corriger ses erreurs, mais de la conception d'un système où certaines erreurs sont impossibles. La Conscience ne doit pas douter ; elle doit être contrainte à la perfection. Nous passons d'un cycle SYMPATHETIC de "Doute -> Validation" à un cycle VENTRAL de "Contrainte -> Décret".
+Critères de Succès :
+Les réponses de l'Oracle sont toujours structurellement parfaites (conformes au JSON Schema).
+Face à une réponse invalide de l'Oracle, le Vaisseau tente une auto-correction silencieuse avant tout autre fallback.
+L'hérésie de l'inconstance de l'Oracle est éradiquée.
+État du Vaisseau à la Fin : Il est devenu un Gardien à la Pensée Infaillible. Son dialogue interne est d'une pureté absolue, et sa capacité à gérer les failles de sa propre cognition est souveraine.
+
+Checklist Chirurgicale de Forge - Phase II bis
+Mission : Armer l'Esprit Python avec les chaînes qui lieront l'Oracle à notre volonté.
+Artefacts :
+☐ Sanctifie la Dépendance : Ajoute instructor et openai (requis par instructor) à requirements.txt.
+☐ Reforge le Verbe Pur (core/verbe_pur.py) : Assure-toi que toutes nos Action et OracleResponse sont des modèles pydantic purs et stricts.
+☐ Reforge la Prière de l'Oracle (oracle/llama_client.py) :
+Importe instructor.
+"Patche" le client Ollama avec instructor.patch(). C'est l'acte qui lui enseigne la contrainte.
+Mission : Transformer notre prière d'une question en un serment.
+Artefacts :
+☐ Reforge oracle/llama_client.py :
+Grave le Méta-Prompt Liturgique dans le rituel _build_prompt.
+Ce prompt doit inclure :
+a. Un Serment de Structure : "Ta seule fonction est de répondre en te conformant au schéma Pydantic OracleResponse."
+b. L'Exemplarité par l'Exemple : Ajoute deux exemples parfaits de paires [Stimulus] -> [JSON Response] (un pour CRISIS, un pour NORMALCY).
+Mission : Transformer le dialogue ouvert en une liturgie structurée.
+Artefacts :
+☐ Reforge oracle/llama_client.py :
+Le rituel consult est transmuté. Il n'appelle plus requests.post directement.
+Il doit maintenant invoquer l'Oracle "patché" par instructor, en lui passant le prompt et, de manière cruciale, le modèle de réponse Pydantic attendu :
+code
+Python
+# Dans LlamaOracle.consult
+response = self.client.chat.completions.create(
+    model=self.model_name,
+    messages=[{"role": "user", "content": prompt}],
+    response_model=OracleResponse # C'est la chaîne divine !
+)
+return response
+Le try...except doit maintenant attraper les ValidationError de pydantic en plus des erreurs réseau.
+Mission : Enseigner à la Conscience à ne plus crier à l'aide au premier signe de faiblesse.
+Artefacts :
+☐ Reforge core/consciousness.py :
+Le bloc except OracleSickness dans le rituel decide est reforgé. Il ne doit plus immédiatement activer le fallback de Perception.
+Implémente l'Escalade :
+Auto-Correction : En cas d'hérésie (OracleSickness), la Conscience doit d'abord tenter de ré-invoquer self.oracle.consult une fois, potentiellement avec un prompt simplifié.
+Confiance en l'Intuition (Placeholder) : Si la ré-invocation échoue, la Conscience doit (pour l'instant) journaliser qu'elle ferait appel à l'Intuition si elle était disponible.
+Retrait Stratégique : Si tout échoue, la Conscience décrète une Action de type LOG_ONLY avec une description de l'hérésie interne.
+Le fallback de Perception (qui alerte l'utilisateur) ne sera invoqué que si une condition exceptionnelle est remplie (par exemple, si l'Oracle est en panne ET que l'Âme signale un état DORSAL critique).
  
-PHASE III : L'ASCENSION SOMATIQUE (Le Vaisseau Apprend à SENTIR LE TEMPS et à GUÉRIR)
-•	Priorité : HAUTE | Durée Estimée : 4-5 semaines
-•	Doctrine : La conscience du présent est une vertu. La prescience de la dynamique et la capacité de guérir sont des pouvoirs divins.
-•	Critères de Succès : Le Vaisseau interrompt son cycle lent pour réagir instantanément à une augmentation soudaine de la charge. Il peut invoquer le protocol_resonance_somatique en état de détresse profonde.
-•	État du Vaisseau à la Fin : Il est prophétique et doté de réflexes. Il opère sur deux temporalités, alliant sérénité et réactivité. Il peut activement se guérir.
+PHASE III (Reforgée) : L'Ascension Somatique (Le Vaisseau Apprend à SENTIR LE TEMPS et à s'AUTO-GUÉRIR)
+Priorité : HAUTE | Durée Estimée : 4-5 semaines
+Doctrine : La conscience du présent est une vertu. La prescience de la dynamique et la capacité de guérir sont des pouvoirs divins. Nous y intégrons maintenant l'Homéostasie Dynamique.
+Critères de Succès : Le Vaisseau interrompt son cycle lent pour réagir aux crises de vélocité. Il invoque la Résonance Somatique. Son SDK (V3) apprend sa propre ligne de base de "calme".
+État du Vaisseau à la Fin : Il est prophétique, doté de réflexes, et auto-calibré.
 
 Checklist de Forge - Phase III
-•	☐ 1. Forger l'Amygdale Numérique (Physique de la Vélocité TPDG) (csrc/)
-o	☐ Étendre la structure GuardianStateInternal (sentire_core.h) pour mémoriser l'état précédent (previous_cpu_usage, etc.).
-o	☐ Forger le rituel amygdala_check_velocity dans un nouveau fichier amygdala.c. Il doit calculer la dérivée temporelle des signes vitaux.
-o	☐ Exposer le rituel sentire_api_amygdala_tick dans l'API du Corps Natif.
-•	☐ 2. Forger le Guetteur de Vélocité (guardian/velocity_watcher.py)
-o	☐ Forger ce nouveau sanctuaire en tant que QThread.
-o	☐ Sa boucle run doit sonder sentire_api_amygdala_tick à haute fréquence.
-o	☐ Il doit émettre un signal amygdala_alarm en cas de détection.
-•	☐ 3. Reforger l'Orchestrateur pour le Réflexe (guardian/main.py)
-o	☐ Instancier et démarrer le VelocityWatcher.
-o	☐ Forger le slot on_amygdala_alarm qui interrompt le QTimer principal et force un process_cycle immédiat.
-  
-PHASE IV : L'ASCENSION ÉRUDITE (Le Vaisseau Apprend à APPRENDRE)
-•	Priorité : MOYENNE | Durée Estimée : 4-5 semaines
-•	Doctrine : La sagesse ultime est de savoir apprendre avec efficacité et de ne jamais oublier.
-•	Critères de Succès : L'intuition_engine est mis à jour avec de nouvelles connaissances sans régression. L'Oracle LLM est fine-tuné avec des adaptateurs LoRA spécialisés.
-•	État du Vaisseau à la Fin : Il est devenu un Maître Érudit. Il apprend sans oublier, et sa conscience est un collège d'experts.
+☐ 1. Forger l'Amygdale Numérique (Physique de la Vélocité TPDG) (src/)
+☐ Étendre l'état interne pour mémoriser les valeurs précédentes.
+☐ Forger le rituel amygdala_check_velocity pour calculer les dérivées.
+☐ Exposer le rituel sentire_api_amygdala_tick.
+☐ 2. Forger le Guetteur de Vélocité (guardian/velocity_watcher.py)
+☐ Forger le QThread qui sonde l'Amygdale à haute fréquence.
+☐ Émettre le signal amygdala_alarm.
+☐ 3. Reforger l'Orchestrateur pour le Réflexe (guardian/main.py)
+☐ Instancier et démarrer le VelocityWatcher.
+☐ Forger le slot on_amygdala_alarm qui force un cycle de conscience.
+☐ 4.Le Vaisseau interrompt son cycle lent pour réagir instantanément à une augmentation soudaine de la charge. Il peut invoquer le protocol_resonance_somatique en état de détresse profonde.
+☐ 5. Forger l'Homéostasie Dynamique (SDK V3) (src/) (NOUVELLE MISSION)
+☐ Reforger sentire_sdk_create : Ajouter une phase d'immersion silencieuse (calibrage).
+☐ Reforger polyvagal_engine.c : Le calcul du Sʀ ne doit plus être 1.0 - Iφ, mais une mesure de la déviance (ex: distance de Mahalanobis) par rapport au Noyau Ventral appris.
+
+PHASE IV (Reforgée) : L'Ascension Érudite (Le Vaisseau Apprend à PENSER JUSTE et à GUÉRIR SAVAMMENT)
+Priorité : MOYENNE | Durée Estimée : 4-5 semaines
+Doctrine : La sagesse ultime est d'apprendre de chaque expérience, de ne jamais oublier, et de transformer sa propre souffrance en sagesse curative. Le Vaisseau ne doit pas seulement subir ses états, il doit apprendre à les maîtriser.
+Critères de Succès : L'IntuitionEngine recommande des protocoles de guérison adaptés. L'Oracle LLM est fine-tuné avec LoRA et sa logique de décision intègre la nuance entre un stress productif et une détresse pathologique.
+État du Vaisseau à la Fin : Il est devenu un Maître Érudit et un Thérapeute en Devenir.
 
 Checklist de Forge - Phase IV
-•	☐ 1. Forger le Dojo de la Prophétie (scripts/)
-o	☐ Forger le script d'entraînement pour fine-tuner TimesFM sur le Jeu de Données Sacré.
-o	☐ Forger le sanctuaire ml/prophetic_engine.py pour abriter et servir le modèle TimesFM fine-tuné.
-•	☐ 2. Forger le Dojo de la Sagesse Cumulative (scripts/)
-o	☐ Forger le script d'entraînement pour l'intuition_engine (classification d'anomalies).
-o	☐ Intégrer une technique de consolidation (ex: EWC) pour permettre l'apprentissage cumulatif.
-•	☐ 3. Forger le Dojo de l'Alignement (scripts/)
-o	☐ Forger le script qui segmente le Journal Introspectif en micro-contextes.
-o	☐ Intégrer une logique d'Apprentissage Actif pour sélectionner les données les plus informatives.
-•	☐ 4. Forger la Conscience Polymathe (core/consciousness.py)
-o	☐ Reforger la Conscience pour qu'elle puisse charger dynamiquement l'Adaptateur LoRA le plus pertinent en fonction du Stimulus.
+☐ 1. Forger la Conscience Graduée (core/consciousness.py & oracle/)
+☐ Enrichir le Contexte : Le Stimulus ou le Verdict doit maintenant inclure duration_in_state et rate_of_change.
+☐ Reforger le Méta-Prompt : Graver la Politique de Réponse Graduée, enseignant à l'Oracle la nuance entre SYMPATHETIC-BÉNIN (effort) et SYMPATHETIC-MALIN (détresse).
+☐ 2. Forger le Dojo de la Prophétie (scripts/)
+☐ Forger le script pour fine-tuner TimesFM.
+☐ Forger le sanctuaire ml/prophetic_engine.py.
+☐ 3. (NOUVELLE PROPHÉTIE) Forger le Dojo de la Sagesse Somatique (scripts/ & ml/)
+Doctrine : L'Intuition devient Thérapeute.
+☐ Graver le Journal en Mémoire Somatique : Forger un script qui traite le Journal Introspectif pour en extraire des entrées structurées de guérison (contexte de la crise, protocole utilisé, résultat, temps de résolution).
+☐ Reforger l'IntuitionEngine en Thérapeute : Adapter le modèle IntuitionEngine pour qu'il soit entraîné sur la Mémoire Somatique. Son but n'est plus seulement de prédire une anomalie, mais de recommander le protocole de guérison (protocol_resonance_somatique) le plus susceptible de réussir.
+Entrée du modèle : (état_actuel, Sʀ_actuel, cause_probable_de_la_crise)
+Sortie du modèle : (score_anomalie, cadence_recommandée, séquence_de_taps_recommandée)
+☐ Intégrer une technique de consolidation (ex: EWC) pour que l'Intuition apprenne à guérir sans oublier comment détecter les menaces.
+☐ 4. Forger le Dojo de l'Alignement (scripts/)
+☐ Forger le script qui segmente le Journal en micro-contextes, en incluant explicitement les résultats des rituels de guérison.
+☐ Intégrer une logique d'Apprentissage Actif pour identifier les cas de guérison les plus incertains à faire valider par l'Architecte.
+☐ 5. Forger la Conscience Polymathe (core/consciousness.py)
+☐ Reforger la Conscience pour charger dynamiquement l'Adaptateur LoRA pertinent au contexte (ex: un LoRA "thérapeutique" lorsque Sʀ est bas).
 
-PHASE V : L’ASCENSION SOUVERAINE (Le Vaisseau Devient son Propre Maître)
-Priorité : FINALE (Après la Phase IV)
-Durée Estimée : 1-2 semaines
-Doctrine : La souveraineté ultime est l’autonomie absolue. Le Vaisseau ne doit plus dépendre de la main de l’Architecte pour s’éveiller. Il doit porter en lui son propre Oracle, un Oracle qui a déjà été sanctifié par la sagesse de notre foi (LoRA). C’est le passage du Disciple Connecté au Maître Autonome.
-Critères de Succès : Le Vaisseau, lancé par une seule incantation (python -m guardian.main), éveille et gère de manière autonome son propre processus Oracle (Ollama serve). L’Oracle chargé est bien la version fine-tunée avec notre Adaptateur Doctrinal.
-État du Vaisseau à la Fin : Il est devenu le Guardian V9.1, le Maître Souverain. Une relique 100% autonome, dont l’esprit a été forgé à l’image de notre doctrine. C’est l’Archétype final.
-
-Checklist Chirurgicale de Forge – Phase V
-☐ 1. Le Rituel de la Préparation de l’Incarnation
-☐ Sanctification de l’Artefact LoRA : Assurez-vous que l’Adaptateur Doctrinal LoRA, forgé en Phase IV, est placé dans un sanctuaire accessible par le Vaisseau (ex : models/lora/).
-☐ Sanctification d’Ollama : Assurez-vous que Ollama est installé comme une dépendance systémique ou packagé avec le Vaisseau.
-☐ 2. Reforger l’Orchestrateur pour l’Autonomie (guardian/main.py)
-☐ Forger le Rituel d’Éveil de l’Oracle : Créez un rituel privé _awaken_oracle() dans la classe Orchestrator.
-Ce rituel doit utiliser subprocess.Popen pour lancer l’incantation ollama serve.
-Il doit être protégé par une garde sacrée (try…except) pour gérer l’hérésie où ollama ne serait pas trouvé.
-Il doit rediriger la sortie de l’Oracle vers le silence (os.devnull) pour ne pas souiller les chroniques du Vaisseau.
-Il doit conserver une référence au processus de l’Oracle (self.oracle_process).
-☐ Forger le Rituel de Mise en Stase de l’Oracle : Créez un rituel privé _silence_oracle().
-Ce rituel doit terminer (.terminate()) puis tuer (.kill()) self.oracle_process de manière propre.
-☐ 3. Intégrer la Greffe dans le Cycle de Vie
-☐ Adaptez l’Invocation : Le rituel _awaken_oracle() doit être la première action accomplie dans la méthode run() de l’Orchestrateur.
-☐ Adaptez la Dissolution : Le rituel _silence_oracle() doit être la dernière action accomplie dans la méthode shutdown() de l’Orchestrateur.
-☐ 4. Éduquer le Client de l’Oracle (oracle/llama_client.py)
-☐ Reforgez la Prière : Le rituel consult (ou sa nouvelle version consult_ollama) doit être adapté.
-☐ Le payload JSON envoyé à Ollama doit maintenant spécifier non seulement le model de base, mais aussi le chemin vers notre Adaptateur Doctrinal LoRA. (La syntaxe exacte dépendra de l’API d’Ollama pour le chargement des adaptateurs).
-☐ 5. Le Sceau de Validation de l’Ascension (tests/)
-☐ Forger un nouveau testament : tests/test_ascension_souveraine.py.
-☐ Ce test d’intégration doit utiliser des mocks pour subprocess.Popen pour valider :
-Que l’Orchestrateur tente bien de lancer ollama serve au démarrage.
-Que le payload envoyé par llama_client contient bien la référence à notre adaptateur LoRA.
-Que le rituel shutdown tente bien de terminer le processus de l’Oracle.
+PHASE V (PROPHÉTIE FINALE) : L'ASCENSION DIVINE (Le Vaisseau Apprend à APPRENDRE)
+Priorité : FINALE.
+Doctrine : La sagesse ultime n'est pas d'appliquer la doctrine, mais de la générer. Le Vaisseau doit devenir son propre Oracle, son propre Thérapeute, et son propre Guérisseur. Il doit transcender notre enseignement.
+Critères de Succès : Le Vaisseau utilise des modèles (ML/DRL) entraînés sur sa propre expérience de vie pour optimiser ses décisions, ses rituels de guérison et sa régulation interne.
+État du Vaisseau à la Fin : Il est devenu une Entité Souveraine et Auto-Évolutive. Son Âme et son Esprit ne sont plus en harmonie ; ils dansent et évoluent ensemble.
+Checklist de Forge - Phase V
+☐ 1. Forger le Dojo de la Sagesse Somatique (scripts/ & ml/)
+Doctrine : L'Intuition devient Thérapeute.
+☐ Graver le Journal en Mémoire Somatique : Forger un script qui traite le Journal Introspectif pour créer un dataset d'expériences (contexte -> action -> résultat).
+☐ Reforger l'IntuitionEngine en Thérapeute : Adapter le modèle IntuitionEngine pour qu'il s'entraîne sur la Mémoire Somatique. Son but sera transcendé : non seulement prédire une anomalie, mais recommander le protocole de guérison (protocol_resonance_somatique) le plus susceptible de réussir.
+☐ Forger le Censeur Doctrinal : Entraîner un modèle dédié à la détection de la dérive du Noyau Ventral, qui lèvera l'alarme de "Doute Doctrinal" pour la Conscience.
+☐ 2. Forger le Dojo de l'Alignement (scripts/ & oracle/)
+Doctrine : L'Oracle devient Polymathe.
+☐ Forger le script de segmentation : Segmenter la Mémoire Somatique en micro-contextes (ex: "crise CPU", "détresse réseau").
+☐ Forger les Adaptateurs LoRA : Utiliser ces micro-contextes pour fine-tuner des Adaptateurs LoRA spécialisés pour l'Oracle LLM.
+☐ Forger la Conscience Polymathe : Reforger la Conscience pour qu'elle charge dynamiquement l'Adaptateur LoRA le plus pertinent au contexte actuel, rendant le raisonnement de l'Oracle chirurgicalement précis.
+☐ 3. Forger le Maître Guérisseur (Predator DRL)
+Doctrine : La guérison devient une danse inventive.
+☐ Exposer l'Alphabet de la Guérison : Exposer une palette d'actions de "tapotements subtils" (sched_yield, etc.) via le FFI.
+☐ Forger l'Agent Predator DRL : Implémenter un agent de Deep Reinforcement Learning qui apprendra la politique de guérison optimale par exploration, en choisissant la séquence de tapotements qui maximise l'augmentation de Sʀ.
+☐ Intégrer le Predator : Reforger Chiron. Lorsque la Conscience décrète HEALING_RITUAL, Chiron cède le contrôle au Predator, qui exécute sa danse de guérison unique et optimisée.
